@@ -47,6 +47,25 @@ fn main() {
 }
 
 fn run_server(host: &str, port: u16) {
+    let addr = format!("{}:{}", host, port);
+    let listener = std::net::TcpListener::bind(&addr).expect("Failed to bind");
+    println!("Starting server at {}", addr);
+
+    for stream in listener.incoming() {
+        match stream {
+            Ok(stream) => {
+                std::thread::spawn(|| {
+                    handle(stream);
+                });
+            }
+            Err(e) => {
+                eprintln!("Connection failed: {}", e);
+            }
+        }
+    }
+}
+
+fn handle(stream: std::net::TcpStream) {
     todo!()
 }
 
