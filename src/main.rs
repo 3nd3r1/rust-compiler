@@ -65,8 +65,71 @@ fn run_server(host: &str, port: u16) {
     }
 }
 
-fn handle(stream: std::net::TcpStream) {
-    todo!()
+fn handle(mut stream: std::net::TcpStream) {
+    use std::io::{Read, Write};
+
+    let mut buffer = Vec::new();
+    if let Err(e) = stream.read_to_end(&mut buffer) {
+        eprintln!("Failed to read: {}", e);
+        return;
+    }
+
+    let input = match String::from_utf8(buffer) {
+        Ok(s) => s,
+        Err(e) => {
+            eprintln!("Invalid UTF-8: {}", e);
+            return;
+        }
+    };
+
+    let result_str = process_request(&input);
+
+    if let Err(e) = stream.write_all(result_str.as_bytes()) {
+        eprintln!("Failed to write: {}", e);
+    }
+}
+
+use serde::{Deserialize, Serialize};
+
+#[derive(Deserialize)]
+#[serde(tag = "command", rename_all = "lowercase")]
+enum Request {
+    Ping,
+    Compile { code: String },
+}
+
+#[derive(Serialize)]
+#[serde(untagged)]
+enum RequestResult {
+    Empty {},
+    Program { program: String },
+    Error { error: String },
+}
+
+fn process_request(input: &str) -> String {
+    let request: Request = match serde_json::from_str(&input) {
+        Ok(r) => r,
+        Err(e) => {
+            return serde_json::to_string(&RequestResult::Error {
+                error: e.to_string(),
+            })
+            .unwrap();
+        }
+    };
+
+    let result = match request {
+        Request::Ping => RequestResult::Empty {},
+        Request::Compile { code } => match call_compiler(&code) {
+            Ok(executable) => {
+                use base64::{Engine as _, engine::general_purpose::STANDARD};
+                let encoded = STANDARD.encode(&executable);
+                RequestResult::Program { program: encoded }
+            }
+            Err(e) => RequestResult::Error { error: e },
+        },
+    };
+
+    serde_json::to_string(&result).unwrap()
 }
 
 fn call_compiler(source_code: &str) -> Result<Vec<u8>, String> {
