@@ -1,4 +1,5 @@
 use clap::{Parser, Subcommand};
+use clap_stdin::FileOrStdin;
 
 #[derive(Parser)]
 struct Args {
@@ -9,9 +10,10 @@ struct Args {
 #[derive(Subcommand)]
 enum Commands {
     Compile {
-        input_file: Option<String>,
+        #[arg(default_value = "-")]
+        input_file: FileOrStdin,
         #[arg(long)]
-        output_file: String,
+        output: String,
     },
     Serve {
         #[arg(long, default_value = "127.0.0.1")]
@@ -25,8 +27,8 @@ fn main() {
     let args = Args::parse();
 
     match args.command {
-        Commands::Compile { input_file, output_file } => {
-            println!("Compile command with {:?}, {}", input_file, output_file);
+        Commands::Compile { input_file, output } => {
+            println!("Compile command with {:?}, {}", input_file.contents().unwrap(), output);
         }
         Commands::Serve { host, port } => {
             println!("Server command with {}, {}", host, port);
