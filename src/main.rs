@@ -1,5 +1,6 @@
 use clap::{Parser, Subcommand};
 use clap_stdin::FileOrStdin;
+use std::fs;
 
 #[derive(Parser)]
 struct Args {
@@ -28,10 +29,18 @@ fn main() {
 
     match args.command {
         Commands::Compile { input_file, output } => {
-            println!("Compile command with {:?}, {}", input_file.contents().unwrap(), output);
+            let source_code = input_file.contents().expect("Failed to read input");
+            match call_compiler(&source_code) {
+                Ok(executable) => {
+                    fs::write(output, &executable).expect("Failed to write output file");
+                }
+                Err(e) => {
+                    eprintln!("Compilation error: {}", e);
+                    std::process::exit(1);
+                }
+            }
         }
         Commands::Serve { host, port } => {
-            println!("Server command with {}, {}", host, port);
             run_server(&host, port);
         }
     }
