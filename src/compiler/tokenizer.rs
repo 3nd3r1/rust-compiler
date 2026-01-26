@@ -4,7 +4,6 @@ use regex::Regex;
 enum TokenKind {
     Identifier,
     IntLiteral,
-    Other,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -62,41 +61,95 @@ pub fn tokenize(source_code: &str) -> Result<Vec<Token>, String> {
     Ok(tokens)
 }
 
+fn tokenize_without_loc(source_code: &str) -> Vec<(TokenKind, String)> {
+    tokenize(source_code)
+        .unwrap()
+        .into_iter()
+        .map(|t| (t.kind, t.text))
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use TokenKind::*;
 
     #[test]
     fn test_tokenizer_basics() {
-        assert_eq!(tokenize("if  3\nwhile").unwrap(), vec!["if", "3", "while"]);
+        assert_eq!(
+            tokenize_without_loc("if  3\nwhile"),
+            vec![
+                (Identifier, "if".into()),
+                (IntLiteral, "3".into()),
+                (Identifier, "while".into())
+            ]
+        );
     }
 
     #[test]
-    fn test_tokenizer_valid_indentifiers() {
-        assert_eq!(tokenize("hello").unwrap(), vec!["hello"]);
-        assert_eq!(tokenize("HELLO").unwrap(), vec!["HELLO"]);
-        assert_eq!(tokenize("hEl_LO").unwrap(), vec!["hEl_LO"]);
-        assert_eq!(tokenize("__hello").unwrap(), vec!["__hello"]);
-        assert_eq!(tokenize("_hEl_LO").unwrap(), vec!["_hEl_LO"]);
-        assert_eq!(tokenize("_hE12lLO").unwrap(), vec!["_hE12lLO"]);
+    fn test_tokenizer_valid_identifiers() {
+        assert_eq!(
+            tokenize_without_loc("hello"),
+            vec![(Identifier, "hello".into())]
+        );
+        assert_eq!(
+            tokenize_without_loc("HELLO"),
+            vec![(Identifier, "HELLO".into())]
+        );
+        assert_eq!(
+            tokenize_without_loc("hEl_LO"),
+            vec![(Identifier, "hEl_LO".into())]
+        );
+        assert_eq!(
+            tokenize_without_loc("__hello"),
+            vec![(Identifier, "__hello".into())]
+        );
+        assert_eq!(
+            tokenize_without_loc("_hEl_LO"),
+            vec![(Identifier, "_hEl_LO".into())]
+        );
+        assert_eq!(
+            tokenize_without_loc("_hE12lLO"),
+            vec![(Identifier, "_hE12lLO".into())]
+        );
     }
 
     #[test]
     fn test_tokenizer_literals() {
-        assert_eq!(tokenize("0").unwrap(), vec!["0"]);
-        assert_eq!(tokenize("123").unwrap(), vec!["123"]);
-        assert_eq!(tokenize("123 123  11").unwrap(), vec!["123", "123", "11"]);
+        assert_eq!(tokenize_without_loc("0"), vec![(IntLiteral, "0".into())]);
         assert_eq!(
-            tokenize("000 123 123  11").unwrap(),
-            vec!["000", "123", "123", "11"]
+            tokenize_without_loc("123"),
+            vec![(IntLiteral, "123".into())]
+        );
+        assert_eq!(
+            tokenize_without_loc("123 123  11"),
+            vec![
+                (IntLiteral, "123".into()),
+                (IntLiteral, "123".into()),
+                (IntLiteral, "11".into())
+            ]
+        );
+        assert_eq!(
+            tokenize_without_loc("000 123 123  11"),
+            vec![
+                (IntLiteral, "000".into()),
+                (IntLiteral, "123".into()),
+                (IntLiteral, "123".into()),
+                (IntLiteral, "11".into())
+            ]
         );
     }
 
     #[test]
     fn test_tokenizer_whitespace() {
         assert_eq!(
-            tokenize("moi  miten\n menee\t sulla").unwrap(),
-            vec!["moi", "miten", "menee", "sulla"]
+            tokenize_without_loc("moi  miten\n menee\t sulla"),
+            vec![
+                (Identifier, "moi".into()),
+                (Identifier, "miten".into()),
+                (Identifier, "menee".into()),
+                (Identifier, "sulla".into())
+            ]
         );
     }
 
@@ -111,8 +164,17 @@ mod tests {
     #[test]
     fn test_tokenizer_mixed() {
         assert_eq!(
-            tokenize("moi1 123  hello 23 21 _var1\n if 23").unwrap(),
-            vec!["moi1", "123", "hello", "23", "21", "_var1", "if", "23"]
+            tokenize_without_loc("moi1 123  hello 23 21 _var1\n if 23"),
+            vec![
+                (Identifier, "moi1".into()),
+                (IntLiteral, "123".into()),
+                (Identifier, "hello".into()),
+                (IntLiteral, "23".into()),
+                (IntLiteral, "21".into()),
+                (Identifier, "_var1".into()),
+                (Identifier, "if".into()),
+                (IntLiteral, "23".into())
+            ]
         );
     }
 }
