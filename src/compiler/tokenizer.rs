@@ -246,9 +246,34 @@ mod tests {
     }
 
     #[test]
+    fn test_tokenizer_comments() {
+        assert_eq!(tokenize_without_loc("# hello"), vec![]);
+        assert_eq!(tokenize_without_loc("// hello"), vec![]);
+        assert_eq!(
+            tokenize_without_loc("hello # hello hello"),
+            vec![(Identifier, "hello".into())]
+        );
+        assert_eq!(
+            tokenize_without_loc("hello # hello hello\n 1"),
+            vec![(Identifier, "hello".into()), (IntLiteral, "1".into()),]
+        );
+        assert_eq!(
+            tokenize_without_loc("hello 1 # this is a comment\n a=2 // comment # comment\n 2"),
+            vec![
+                (Identifier, "hello".into()),
+                (IntLiteral, "1".into()),
+                (Identifier, "a".into()),
+                (Operator, "=".into()),
+                (IntLiteral, "2".into()),
+                (IntLiteral, "2".into()),
+            ]
+        );
+    }
+
+    #[test]
     fn test_tokenizer_mixed() {
         assert_eq!(
-            tokenize_without_loc("moi1 123  hello 23 21 _var1\n if 23 == 23 1+a=32"),
+            tokenize_without_loc("moi1 123  hello 23 21 _var1 //this is a comment\n if 23 == 23 1+a=32"),
             vec![
                 (Identifier, "moi1".into()),
                 (IntLiteral, "123".into()),
