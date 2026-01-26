@@ -5,7 +5,7 @@ pub enum TokenKind {
     Identifier,
     IntLiteral,
     Operator,
-    Punctutation,
+    Punctuation,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -34,7 +34,7 @@ pub fn tokenize(source_code: &str) -> Result<Vec<Token>, String> {
         (TokenKind::Identifier, identifier),
         (TokenKind::IntLiteral, literal),
         (TokenKind::Operator, operator),
-        (TokenKind::Punctutation, punctuation),
+        (TokenKind::Punctuation, punctuation),
     ];
 
     let mut remaining_code = source_code;
