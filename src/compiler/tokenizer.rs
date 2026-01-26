@@ -41,8 +41,51 @@ mod tests {
 
     #[test]
     fn test_tokenizer_basics() {
-        let input = "if  3\nwhile";
-        let expected = vec!["if", "3", "while"];
-        assert_eq!(tokenize(input).unwrap(), expected);
+        assert_eq!(tokenize("if  3\nwhile").unwrap(), vec!["if", "3", "while"]);
+    }
+
+    #[test]
+    fn test_tokenizer_valid_indentifiers() {
+        assert_eq!(tokenize("hello").unwrap(), vec!["hello"]);
+        assert_eq!(tokenize("HELLO").unwrap(), vec!["HELLO"]);
+        assert_eq!(tokenize("hEl_LO").unwrap(), vec!["hEl_LO"]);
+        assert_eq!(tokenize("__hello").unwrap(), vec!["__hello"]);
+        assert_eq!(tokenize("_hEl_LO").unwrap(), vec!["_hEl_LO"]);
+        assert_eq!(tokenize("_hE12lLO").unwrap(), vec!["_hE12lLO"]);
+    }
+
+    #[test]
+    fn test_tokenizer_literals() {
+        assert_eq!(tokenize("0").unwrap(), vec!["0"]);
+        assert_eq!(tokenize("123").unwrap(), vec!["123"]);
+        assert_eq!(tokenize("123 123  11").unwrap(), vec!["123", "123", "11"]);
+        assert_eq!(
+            tokenize("000 123 123  11").unwrap(),
+            vec!["000", "123", "123", "11"]
+        );
+    }
+
+    #[test]
+    fn test_tokenizer_whitespace() {
+        assert_eq!(
+            tokenize("moi  miten\n menee\t sulla").unwrap(),
+            vec!["moi", "miten", "menee", "sulla"]
+        );
+    }
+
+    #[test]
+    fn test_tokenizer_invalid_characters() {
+        assert!(tokenize("@").is_err());
+        assert!(tokenize("pete@gmail.fi").is_err());
+        assert!(tokenize("^hi$").is_err());
+        assert!(tokenize("hi$").is_err());
+    }
+
+    #[test]
+    fn test_tokenizer_mixed() {
+        assert_eq!(
+            tokenize("moi1 123  hello 23 21 _var1\n if 23").unwrap(),
+            vec!["moi1", "123", "hello", "23", "21", "_var1", "if", "23"]
+        );
     }
 }
