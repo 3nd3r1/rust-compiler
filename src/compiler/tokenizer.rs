@@ -174,9 +174,81 @@ mod tests {
     }
 
     #[test]
+    fn test_tokenizer_operators() {
+        assert_eq!(tokenize_without_loc("+"), vec![(Operator, "+".into()),]);
+        assert_eq!(tokenize_without_loc("<="), vec![(Operator, "<=".into()),]);
+        assert_eq!(
+            tokenize_without_loc("+-"),
+            vec![(Operator, "+".into()), (Operator, "-".into()),]
+        );
+        assert_eq!(
+            tokenize_without_loc("<<"),
+            vec![(Operator, "<".into()), (Operator, "<".into()),]
+        );
+        assert_eq!(
+            tokenize_without_loc("+-<<=>="),
+            vec![
+                (Operator, "+".into()),
+                (Operator, "-".into()),
+                (Operator, "<".into()),
+                (Operator, "<=".into()),
+                (Operator, ">=".into())
+            ]
+        );
+        assert_eq!(
+            tokenize_without_loc("1+1=2"),
+            vec![
+                (IntLiteral, "1".into()),
+                (Operator, "+".into()),
+                (IntLiteral, "1".into()),
+                (Operator, "=".into()),
+                (IntLiteral, "2".into()),
+            ]
+        );
+    }
+
+    #[test]
+    fn test_tokenizer_punctuation() {
+        assert_eq!(tokenize_without_loc(","), vec![(Punctuation, ",".into()),]);
+        assert_eq!(
+            tokenize_without_loc(";;"),
+            vec![(Punctuation, ";".into()), (Punctuation, ";".into())]
+        );
+        assert_eq!(
+            tokenize_without_loc("{}"),
+            vec![(Punctuation, "{".into()), (Punctuation, "}".into()),]
+        );
+        assert_eq!(
+            tokenize_without_loc("()"),
+            vec![(Punctuation, "(".into()), (Punctuation, ")".into()),]
+        );
+        assert_eq!(
+            tokenize_without_loc("(){,;}"),
+            vec![
+                (Punctuation, "(".into()),
+                (Punctuation, ")".into()),
+                (Punctuation, "{".into()),
+                (Punctuation, ",".into()),
+                (Punctuation, ";".into()),
+                (Punctuation, "}".into())
+            ]
+        );
+        assert_eq!(
+            tokenize_without_loc("1+1=2"),
+            vec![
+                (IntLiteral, "1".into()),
+                (Operator, "+".into()),
+                (IntLiteral, "1".into()),
+                (Operator, "=".into()),
+                (IntLiteral, "2".into()),
+            ]
+        );
+    }
+
+    #[test]
     fn test_tokenizer_mixed() {
         assert_eq!(
-            tokenize_without_loc("moi1 123  hello 23 21 _var1\n if 23"),
+            tokenize_without_loc("moi1 123  hello 23 21 _var1\n if 23 == 23 1+a=32"),
             vec![
                 (Identifier, "moi1".into()),
                 (IntLiteral, "123".into()),
@@ -185,7 +257,14 @@ mod tests {
                 (IntLiteral, "21".into()),
                 (Identifier, "_var1".into()),
                 (Identifier, "if".into()),
-                (IntLiteral, "23".into())
+                (IntLiteral, "23".into()),
+                (Operator, "==".into()),
+                (IntLiteral, "23".into()),
+                (IntLiteral, "1".into()),
+                (Operator, "+".into()),
+                (Identifier, "a".into()),
+                (Operator, "=".into()),
+                (IntLiteral, "32".into())
             ]
         );
     }
