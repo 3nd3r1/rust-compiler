@@ -1,22 +1,22 @@
 use regex::Regex;
 
 #[derive(Debug, Clone, PartialEq)]
-enum TokenKind {
+pub enum TokenKind {
     Identifier,
     IntLiteral,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-struct TokenLocation {
-    line: u32,
-    column: u32,
+pub struct TokenLocation {
+    pub line: u32,
+    pub column: u32,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-struct Token {
-    kind: TokenKind,
-    text: String,
-    loc: TokenLocation,
+pub struct Token {
+    pub kind: TokenKind,
+    pub text: String,
+    pub loc: TokenLocation,
 }
 
 pub fn tokenize(source_code: &str) -> Result<Vec<Token>, String> {
@@ -61,18 +61,18 @@ pub fn tokenize(source_code: &str) -> Result<Vec<Token>, String> {
     Ok(tokens)
 }
 
-fn tokenize_without_loc(source_code: &str) -> Vec<(TokenKind, String)> {
-    tokenize(source_code)
-        .unwrap()
-        .into_iter()
-        .map(|t| (t.kind, t.text))
-        .collect()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use TokenKind::*;
+
+    fn tokenize_without_loc(source_code: &str) -> Vec<(TokenKind, String)> {
+        tokenize(source_code)
+            .unwrap()
+            .into_iter()
+            .map(|t| (t.kind, t.text))
+            .collect()
+    }
 
     #[test]
     fn test_tokenizer_basics() {
