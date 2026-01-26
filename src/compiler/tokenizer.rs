@@ -1,11 +1,34 @@
 use regex::Regex;
 
-pub fn tokenize(source_code: &str) -> Result<Vec<String>, String> {
+#[derive(Debug, Clone, PartialEq)]
+enum TokenKind {
+    Identifier,
+    IntLiteral,
+    Other,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+struct TokenLocation {
+    line: u32,
+    column: u32,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+struct Token {
+    kind: TokenKind,
+    text: String,
+    loc: TokenLocation,
+}
+
+pub fn tokenize(source_code: &str) -> Result<Vec<Token>, String> {
     let identifier = Regex::new(r"^[a-zA-Z_][a-zA-Z0-9_]*").unwrap();
     let literal = Regex::new(r"^[0-9]+").unwrap();
     let whitespace = Regex::new(r"^\s+").unwrap();
 
-    let patterns = vec![identifier, literal];
+    let patterns = vec![
+        (TokenKind::Identifier, identifier),
+        (TokenKind::IntLiteral, literal),
+    ];
 
     let mut remaining_code = source_code;
     let mut tokens = Vec::new();
@@ -17,10 +40,14 @@ pub fn tokenize(source_code: &str) -> Result<Vec<String>, String> {
         }
 
         let mut match_found = false;
-        for pattern in &patterns {
+        for (token_kind, pattern) in &patterns {
             if let Some(matched) = pattern.find(remaining_code) {
-                let token = matched.as_str();
-                tokens.push(token.to_string());
+                let token = Token {
+                    kind: token_kind.clone(),
+                    text: matched.as_str().to_string(),
+                    loc: TokenLocation { line: 0, column: 0 },
+                };
+                tokens.push(token);
                 remaining_code = &remaining_code[matched.end()..];
                 match_found = true;
                 break;
