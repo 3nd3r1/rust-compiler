@@ -24,10 +24,10 @@ pub struct Token {
 pub fn tokenize(source_code: &str) -> Result<Vec<Token>, String> {
     let identifier = Regex::new(r"^[a-zA-Z_][a-zA-Z0-9_]*").unwrap();
     let literal = Regex::new(r"^[0-9]+").unwrap();
-    let operator = Regex::new(r"^(\=\=|\!\=|\<\=|\>\=|[\<\>\+\-\*\/\%\=])").unwrap();
-    let punctuation = Regex::new(r"^[\;\,\(\)\{\}]").unwrap();
+    let operator = Regex::new(r"^(==|!=|<=|>=|[-<>+*/%=])").unwrap();
+    let punctuation = Regex::new(r"^[;,\(\){}]").unwrap();
 
-    let comment = Regex::new(r"^(\/\/|\#)[^\n]*").unwrap();
+    let comment = Regex::new(r"^(//|\#)[^\n]*").unwrap();
     let whitespace = Regex::new(r"^\s+").unwrap();
 
     let patterns = vec![
