@@ -11,17 +11,17 @@ pub fn tokenize(source_code: &str) -> Vec<String> {
     let mut tokens = Vec::new();
 
     while !remaining_code.is_empty() {
-        if whitespace.is_match(remaining_code) {
-            let matched = whitespace.find(remaining_code).unwrap();
+        if let Some(matched) = whitespace.find(remaining_code) {
             remaining_code = &remaining_code[matched.end()..];
             continue;
         }
 
         for pattern in &patterns {
-            let matched = pattern.find(remaining_code).unwrap();
-            let token = matched.as_str();
-
-            tokens.push(token.to_string());
+            if let Some(matched) = pattern.find(remaining_code) {
+                let token = matched.as_str();
+                tokens.push(token.to_string());
+                remaining_code = &remaining_code[matched.end()..];
+            }
         }
     }
 
