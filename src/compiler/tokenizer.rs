@@ -6,6 +6,7 @@ pub enum TokenKind {
     IntLiteral,
     Operator,
     Punctuation,
+    End,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -75,6 +76,14 @@ pub fn tokenize(source_code: &str) -> Result<Vec<Token>, String> {
         }
     }
 
+    tokens.push(Token {
+        kind: TokenKind::End,
+        text: String::new(),
+        loc: tokens
+            .last()
+            .map(|t| t.loc.clone())
+            .unwrap_or(TokenLocation { line: 1, column: 1 }),
+    });
     Ok(tokens)
 }
 
