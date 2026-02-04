@@ -183,4 +183,16 @@ mod tests {
             add(sub(lit(1), lit(2)), lit(3))
         );
     }
+
+    #[test]
+    fn test_parse_paranthesis() {
+        assert_eq!(
+            parse(tokenize("1-(2+3)").unwrap()).unwrap(),
+            sub(lit(1), add(lit(2), lit(3)))
+        );
+        assert_eq!(
+            parse(tokenize("(1-(2+2))+1").unwrap()).unwrap(),
+            add(sub(lit(1), add(lit(2), lit(2))), lit(1))
+        );
+    }
 }
