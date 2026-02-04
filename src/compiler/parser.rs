@@ -67,12 +67,39 @@ impl Parser {
         }
     }
 
-    fn parse_expression(&self) -> Result<ast::Expression, String> {
-        todo!()
+    fn parse_operator(&mut self) -> Result<ast::Operation, String> {
+        let token = self.consume(tokenizer::TokenKind::Operator, None)?;
+        match token.text.as_str() {
+            "+" => return Ok(ast::Operation::Addition),
+            "-" => return Ok(ast::Operation::Substraction),
+            _ => {
+                return Err(format!(
+                    "{:?}: expected an integer or identifier",
+                    token.loc
+                ));
+            }
+        }
+    }
+
+    fn parse_expression(&mut self) -> Result<ast::Expression, String> {
+        let mut left = self.parse_term()?;
+
+        while self.peek().kind == tokenizer::TokenKind::Operator {
+            let operation = self.parse_operator()?;
+            let right = self.parse_term()?;
+
+            left = ast::Expression::BinaryOp {
+                left: Box::new(left),
+                right: Box::new(right),
+                op: operation,
+            }
+        }
+
+        Ok(left)
     }
 }
 
 pub fn parse(tokens: Vec<tokenizer::Token>) -> Result<ast::Expression, String> {
-    let parser = Parser { tokens, pos: 0 };
+    let mut parser = Parser { tokens, pos: 0 };
     parser.parse_expression()
 }
