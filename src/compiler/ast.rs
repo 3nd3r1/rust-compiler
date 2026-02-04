@@ -8,8 +8,12 @@ pub enum Operation {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expression {
-    Literal {},
-    Identifier {},
+    Literal {
+        value: i32,
+    },
+    Identifier {
+        value: String,
+    },
     BinaryOp {
         left: Box<Expression>,
         right: Box<Expression>,
