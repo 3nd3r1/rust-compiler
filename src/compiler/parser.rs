@@ -140,33 +140,47 @@ mod tests {
     use super::*;
     use tokenizer::tokenize;
 
-    fn lit(value: i32) -> Box<ast::Expression> {
-        Box::new(ast::Expression::Literal { value })
+    fn lit(value: i32) -> ast::Expression {
+        ast::Expression::Literal { value }
     }
 
-    fn add(value_a: i32, value_b: i32) -> ast::Expression {
+    fn add(expression_a: ast::Expression, expression_b: ast::Expression) -> ast::Expression {
         ast::Expression::BinaryOp {
-            left: lit(value_a),
-            right: lit(value_b),
+            left: Box::new(expression_a),
+            right: Box::new(expression_b),
             op: ast::Operation::Addition,
         }
     }
 
-    fn sub(value_a: i32, value_b: i32) -> ast::Expression {
+    fn sub(expression_a: ast::Expression, expression_b: ast::Expression) -> ast::Expression {
         ast::Expression::BinaryOp {
-            left: lit(value_a),
-            right: lit(value_b),
+            left: Box::new(expression_a),
+            right: Box::new(expression_b),
             op: ast::Operation::Substraction,
         }
     }
 
     #[test]
     fn test_parse_addition() {
-        assert_eq!(parse(tokenize("1+1").unwrap()).unwrap(), add(1, 1));
+        assert_eq!(
+            parse(tokenize("1+1").unwrap()).unwrap(),
+            add(lit(1), lit(1))
+        );
     }
 
     #[test]
     fn test_parse_substraction() {
-        assert_eq!(parse(tokenize("1-1").unwrap()).unwrap(), sub(1, 1));
+        assert_eq!(
+            parse(tokenize("1-1").unwrap()).unwrap(),
+            sub(lit(1), lit(1))
+        );
+    }
+
+    #[test]
+    fn test_parse_associativity() {
+        assert_eq!(
+            parse(tokenize("1-2+3").unwrap()).unwrap(),
+            add(sub(lit(1), lit(2)), lit(3))
+        );
     }
 }
