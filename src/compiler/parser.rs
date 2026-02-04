@@ -1,36 +1,48 @@
 use crate::compiler::{ast, tokenizer};
 
-pub fn parse(tokens: Vec<tokenizer::Token>) -> ast::Expression {
-    let mut pos = 0 as usize;
-
-    return ast::Expression::Literal {};
+struct Parser {
+    tokens: Vec<tokenizer::Token>,
+    pos: usize,
 }
 
-fn peek(tokens: &Vec<tokenizer::Token>, pos: usize) -> &tokenizer::Token {
-    &tokens[pos]
-}
+impl Parser {
+    fn consume(&mut self, expected: Option<&str>) -> Result<&tokenizer::Token, String> {
+        let token = &self.tokens[self.pos];
 
-fn consume(tokens: &Vec<tokenizer::Token>, pos: usize) -> &tokenizer::Token {
-    let token = peek(tokens, pos);
-    token
-}
+        if expected.is_some_and(|value| token.text != value) {
+            return Err(format!(
+                "{:?}: expected '{:?}'",
+                token.loc,
+                expected.unwrap()
+            ));
+        }
 
-fn parse_int_literal(tokens: &Vec<tokenizer::Token>, pos: usize) -> ast::Expression {
-    ast::Expression::Literal {}
-}
+        self.pos += 1;
+        if self.pos >= self.tokens.len() {
+            self.pos = self.tokens.len() - 1;
+        }
 
-fn parse_identifier(tokens: &Vec<tokenizer::Token>, pos: usize) -> ast::Expression {
-    ast::Expression::Identifier {}
-}
+        Ok(token)
+    }
 
-fn parse_term(tokens: &Vec<tokenizer::Token>, pos: usize) -> ast::Expression {
-    if peek(tokens, pos).kind == tokenizer::TokenKind::IntLiteral {
-        return parse_int_literal(tokens, pos);
-    } else {
-        return parse_identifier(tokens, pos);
+    fn parse_int_literal(&self) -> ast::Expression {
+        todo!()
+    }
+
+    fn parse_identifier(&self) -> ast::Expression {
+        todo!()
+    }
+
+    fn parse_term(&self) -> ast::Expression {
+        todo!()
+    }
+
+    fn parse_expression(&self) -> Result<ast::Expression, String> {
+        todo!()
     }
 }
 
-fn parse_expression(tokens: &Vec<tokenizer::Token>, pos: usize) -> ast::Expression {
-    parse_term(tokens, pos)
+pub fn parse(tokens: Vec<tokenizer::Token>) -> Result<ast::Expression, String> {
+    let parser = Parser { tokens, pos: 0 };
+    parser.parse_expression()
 }
