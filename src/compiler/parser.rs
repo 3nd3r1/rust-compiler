@@ -77,13 +77,24 @@ impl Parser {
         match self.peek().kind {
             tokenizer::TokenKind::IntLiteral => return self.parse_int_literal(),
             tokenizer::TokenKind::Identifier => return self.parse_identifier(),
+            tokenizer::TokenKind::Punctuation if self.peek().text.as_str() == "(" => {
+                return self.parse_parenthesized();
+            }
             _ => {
                 return Err(format!(
-                    "{:?}: expected an integer or identifier",
+                    "{:?}: expected an integer, identifier or '('",
                     self.peek().loc
                 ));
             }
         }
+    }
+
+    fn parse_parenthesized(&mut self) -> Result<ast::Expression, String> {
+        self.consume(tokenizer::TokenKind::Punctuation, Some("("))?;
+        let expression = self.parse_expression()?;
+        self.consume(tokenizer::TokenKind::Punctuation, Some(")"))?;
+
+        Ok(expression)
     }
 
     fn parse_operator(&mut self) -> Result<ast::Operation, String> {
