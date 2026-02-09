@@ -331,6 +331,10 @@ mod tests {
         }
     }
 
+    fn none() -> ast::Expression {
+        ast::Expression::NoneLiteral
+    }
+
     fn add(left: ast::Expression, right: ast::Expression) -> ast::Expression {
         binaryop(left, right, ast::Operation::Addition)
     }
@@ -592,6 +596,10 @@ mod tests {
         assert_eq!(
             parse(tokenize("{ 1; 2 }").unwrap()).unwrap(),
             block(vec![int(1), int(2)])
+        );
+        assert_eq!(
+            parse(tokenize("{ 1; }").unwrap()).unwrap(),
+            block(vec![int(1), none()])
         );
         assert_eq!(
             parse(tokenize("{ 1; 2; 3 }").unwrap()).unwrap(),
