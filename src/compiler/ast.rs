@@ -56,4 +56,7 @@ pub enum Expression {
         left: Box<Expression>,
         right: Box<Expression>,
     },
+    Block {
+        expressions: Vec<Expression>,
+    },
 }
