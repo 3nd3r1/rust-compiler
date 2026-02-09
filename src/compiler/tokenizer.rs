@@ -2,8 +2,10 @@ use regex::Regex;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum TokenKind {
-    Identifier,
+    Keyword,
     IntLiteral,
+    BoolLiteral,
+    Identifier,
     Operator,
     Punctuation,
     End,
@@ -23,8 +25,10 @@ pub struct Token {
 }
 
 pub fn tokenize(source_code: &str) -> Result<Vec<Token>, String> {
+    let keyword = Regex::new(r"^(if|else|while|then|do)\b").unwrap();
+    let int_literal = Regex::new(r"^[0-9]+").unwrap();
+    let bool_literal = Regex::new(r"^(true|false)\b").unwrap();
     let identifier = Regex::new(r"^[a-zA-Z_][a-zA-Z0-9_]*").unwrap();
-    let literal = Regex::new(r"^[0-9]+").unwrap();
     let operator = Regex::new(r"^(==|!=|<=|>=|[-<>+*/%=])").unwrap();
     let punctuation = Regex::new(r"^[;,\(\){}]").unwrap();
 
@@ -34,8 +38,10 @@ pub fn tokenize(source_code: &str) -> Result<Vec<Token>, String> {
 
     let null_patterns = vec![comment, multi_line_comment, whitespace];
     let token_patterns = vec![
+        (TokenKind::Keyword, keyword),
+        (TokenKind::IntLiteral, int_literal),
+        (TokenKind::BoolLiteral, bool_literal),
         (TokenKind::Identifier, identifier),
-        (TokenKind::IntLiteral, literal),
         (TokenKind::Operator, operator),
         (TokenKind::Punctuation, punctuation),
     ];
@@ -103,9 +109,20 @@ mod tests {
         assert_eq!(
             tokenize_without_loc("if  3\nwhile"),
             vec![
-                (Identifier, "if".into()),
+                (Keyword, "if".into()),
                 (IntLiteral, "3".into()),
-                (Identifier, "while".into())
+                (Keyword, "while".into())
+            ]
+        );
+        assert_eq!(
+            tokenize_without_loc("if true then 1 else 0"),
+            vec![
+                (Keyword, "if".into()),
+                (BoolLiteral, "true".into()),
+                (Keyword, "then".into()),
+                (IntLiteral, "1".into()),
+                (Keyword, "else".into()),
+                (IntLiteral, "0".into()),
             ]
         );
     }
@@ -300,7 +317,7 @@ mod tests {
                 (IntLiteral, "23".into()),
                 (IntLiteral, "21".into()),
                 (Identifier, "_var1".into()),
-                (Identifier, "if".into()),
+                (Keyword, "if".into()),
                 (IntLiteral, "23".into()),
                 (Operator, "==".into()),
                 (IntLiteral, "23".into()),
