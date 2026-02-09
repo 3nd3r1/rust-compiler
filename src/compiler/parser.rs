@@ -19,14 +19,18 @@ impl Parser {
         let token = &self.tokens[self.pos];
 
         if token.kind != token_kind {
-            return Err(format!("{:?}: expected an {:?}", token.loc, token_kind));
+            return Err(format!(
+                "{:?}: expected an {:?} got {:?}",
+                token.loc, token_kind, token.kind
+            ));
         }
 
         if expected.is_some_and(|value| token.text != value) {
             return Err(format!(
-                "{:?}: expected '{:?}'",
+                "{:?}: expected '{:?}' got '{:?}'",
                 token.loc,
-                expected.unwrap()
+                expected.unwrap(),
+                token.text
             ));
         }
 
@@ -122,9 +126,12 @@ impl Parser {
             tokenizer::TokenKind::Punctuation if self.peek().text.as_str() == "{" => {
                 return self.parse_block();
             }
+            tokenizer::TokenKind::Keyword if self.peek().text.as_str() == "while" => {
+                return self.parse_while();
+            }
             _ => {
                 return Err(format!(
-                    "{:?}: expected a literal, identifier, '(' or 'if' got {:?}",
+                    "{:?}: expected a literal, identifier, '(', 'if', '{{' or 'while' got {:?}",
                     self.peek().loc,
                     self.peek().text
                 ));
@@ -211,6 +218,18 @@ impl Parser {
         self.consume(tokenizer::TokenKind::Punctuation, Some("}"))?;
 
         Ok(ast::Expression::Block { expressions })
+    }
+
+    fn parse_while(&mut self) -> Result<ast::Expression, String> {
+        self.consume(tokenizer::TokenKind::Keyword, Some("while"))?;
+        let condition = self.parse_expression()?;
+        self.consume(tokenizer::TokenKind::Keyword, Some("do"))?;
+        let do_expression = self.parse_expression()?;
+
+        Ok(ast::Expression::While {
+            condition: Box::new(condition),
+            do_expression: Box::new(do_expression),
+        })
     }
 
     fn parse_function_call(&mut self, name: String) -> Result<ast::Expression, String> {
@@ -418,7 +437,7 @@ mod tests {
         assert!(
             parse(tokenize("").unwrap())
                 .unwrap_err()
-                .contains("expected a literal, identifier, '(' or 'if' got"),
+                .contains("{:?}: expected a literal, identifier, '(', 'if', '{{' or 'while' got {:?}"),
         );
         assert!(
             parse(tokenize("a+b c").unwrap())
