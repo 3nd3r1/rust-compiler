@@ -197,7 +197,7 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_addition() {
+    fn test_parser_addition() {
         assert_eq!(
             parse(tokenize("1+1").unwrap()).unwrap(),
             add(int(1), int(1))
@@ -205,7 +205,7 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_substraction() {
+    fn test_parser_substraction() {
         assert_eq!(
             parse(tokenize("1-1").unwrap()).unwrap(),
             sub(int(1), int(1))
@@ -213,7 +213,7 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_invalid() {
+    fn test_parser_invalid() {
         assert!(
             parse(tokenize("").unwrap())
                 .unwrap_err()
@@ -227,7 +227,7 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_associativity() {
+    fn test_parser_associativity() {
         assert_eq!(
             parse(tokenize("1-2+3").unwrap()).unwrap(),
             add(sub(int(1), int(2)), int(3))
@@ -235,7 +235,7 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_paranthesis() {
+    fn test_parser_paranthesis() {
         assert_eq!(
             parse(tokenize("1-(2+3)").unwrap()).unwrap(),
             sub(int(1), add(int(2), int(3)))
@@ -247,7 +247,7 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_if_statement() {
+    fn test_parser_if_statement() {
         assert_eq!(
             parse(tokenize("if true then 1 else 0").unwrap()).unwrap(),
             if_then_else(bool(true), int(1), int(0))
