@@ -241,6 +241,10 @@ mod tests {
         binaryop(left, right, ast::Operation::Substraction)
     }
 
+    fn mul(left: ast::Expression, right: ast::Expression) -> ast::Expression {
+        binaryop(left, right, ast::Operation::Multiplication)
+    }
+
     fn lt(left: ast::Expression, right: ast::Expression) -> ast::Expression {
         binaryop(left, right, ast::Operation::LessThan)
     }
@@ -332,6 +336,22 @@ mod tests {
         assert_eq!(
             parse(tokenize("if true then 1 else 0").unwrap()).unwrap(),
             if_then_else(bool(true), int(1), Some(int(0)))
+        );
+        assert_eq!(
+            parse(tokenize("if true then 1").unwrap()).unwrap(),
+            if_then_else(bool(true), int(1), None)
+        );
+        assert_eq!(
+            parse(tokenize("if a then b + c else x * y").unwrap()).unwrap(),
+            if_then_else(
+                ide("a"),
+                add(ide("b"), ide("c")),
+                Some(mul(ide("x"), ide("y")))
+            )
+        );
+        assert_eq!(
+            parse(tokenize("1 + if true then 2 else 3").unwrap()).unwrap(),
+            add(int(1), if_then_else(bool(true), int(2), Some(int(3))))
         );
     }
 }
