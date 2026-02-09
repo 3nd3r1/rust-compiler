@@ -119,6 +119,9 @@ impl Parser {
             tokenizer::TokenKind::Keyword if self.peek().text.as_str() == "if" => {
                 return self.parse_if();
             }
+            tokenizer::TokenKind::Punctuation if self.peek().text.as_str() == "{" => {
+                return self.parse_block();
+            }
             _ => {
                 return Err(format!(
                     "{:?}: expected a literal, identifier, '(' or 'if' got {:?}",
@@ -192,6 +195,22 @@ impl Parser {
             then_expression: Box::new(then_expression),
             else_expression: else_expression.map(Box::new),
         })
+    }
+
+    fn parse_block(&mut self) -> Result<ast::Expression, String> {
+        self.consume(tokenizer::TokenKind::Punctuation, Some("{"))?;
+        let mut expressions: Vec<ast::Expression> = vec![];
+        loop {
+            expressions.push(self.parse_expression()?);
+            if self.peek().text != ";" {
+                break;
+            } else {
+                self.consume(tokenizer::TokenKind::Punctuation, Some(";"))?;
+            }
+        }
+        self.consume(tokenizer::TokenKind::Punctuation, Some("}"))?;
+
+        Ok(ast::Expression::Block { expressions })
     }
 
     fn parse_function_call(&mut self, name: String) -> Result<ast::Expression, String> {
