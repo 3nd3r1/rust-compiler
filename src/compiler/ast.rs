@@ -33,6 +33,6 @@ pub enum Expression {
     If {
         condition: Box<Expression>,
         then_expression: Box<Expression>,
-        else_expression: Box<Expression>,
+        else_expression: Option<Box<Expression>>,
     },
 }
