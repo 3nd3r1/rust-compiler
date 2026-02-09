@@ -47,6 +47,16 @@ impl Parser {
         })
     }
 
+    fn parse_bool_literal(&mut self) -> Result<ast::Expression, String> {
+        let token = self.consume(tokenizer::TokenKind::BoolLiteral, None)?;
+        Ok(ast::Expression::BoolLiteral {
+            value: token
+                .text
+                .parse::<bool>()
+                .map_err(|_| format!("{:?}: invalid boolean", token.loc))?,
+        })
+    }
+
     fn parse_identifier(&mut self) -> Result<ast::Expression, String> {
         let token = self.consume(tokenizer::TokenKind::Identifier, None)?;
         Ok(ast::Expression::Identifier {
@@ -77,12 +87,13 @@ impl Parser {
         match self.peek().kind {
             tokenizer::TokenKind::IntLiteral => return self.parse_int_literal(),
             tokenizer::TokenKind::Identifier => return self.parse_identifier(),
+            tokenizer::TokenKind::BoolLiteral => return self.parse_bool_literal(),
             tokenizer::TokenKind::Punctuation if self.peek().text.as_str() == "(" => {
                 return self.parse_parenthesized();
             }
             _ => {
                 return Err(format!(
-                    "{:?}: expected an integer, identifier or '('",
+                    "{:?}: expected a literal, identifier or '('",
                     self.peek().loc
                 ));
             }
@@ -104,6 +115,12 @@ impl Parser {
             "-" => return Ok(ast::Operation::Substraction),
             "*" => return Ok(ast::Operation::Multiplication),
             "/" => return Ok(ast::Operation::Division),
+            "<" => return Ok(ast::Operation::LessThan),
+            ">" => return Ok(ast::Operation::GreaterThan),
+            "==" => return Ok(ast::Operation::Equal),
+            "!=" => return Ok(ast::Operation::NotEqual),
+            "<=" => return Ok(ast::Operation::LessThanOrEqual),
+            ">=" => return Ok(ast::Operation::GreaterThanOrEqual),
             _ => {
                 return Err(format!("{:?}: expected an operator", token.loc));
             }
@@ -129,8 +146,30 @@ impl Parser {
         Ok(left)
     }
 
+    fn parse_comparison(&mut self) -> Result<ast::Expression, String> {
+        let mut left = self.parse_expression()?;
+
+        while self.peek().kind == tokenizer::TokenKind::Operator
+            && matches!(
+                self.peek().text.as_str(),
+                "<" | ">" | "==" | "!=" | "<=" | ">="
+            )
+        {
+            let operation = self.parse_operator()?;
+            let right = self.parse_expression()?;
+
+            left = ast::Expression::BinaryOp {
+                left: Box::new(left),
+                right: Box::new(right),
+                op: operation,
+            }
+        }
+
+        Ok(left)
+    }
+
     fn parse(&mut self) -> Result<ast::Expression, String> {
-        let expression = self.parse_expression()?;
+        let expression = self.parse_comparison()?;
 
         if self.peek().kind != tokenizer::TokenKind::End {
             return Err(format!(
