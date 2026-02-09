@@ -261,6 +261,10 @@ mod tests {
         binaryop(left, right, ast::Operation::LessThan)
     }
 
+    fn and(left: ast::Expression, right: ast::Expression) -> ast::Expression {
+        binaryop(left, right, ast::Operation::And)
+    }
+
     fn binaryop(
         left: ast::Expression,
         right: ast::Expression,
@@ -371,6 +375,11 @@ mod tests {
         assert_eq!(
             parse(tokenize("1 + if true then 2 else 3").unwrap()).unwrap(),
             add(int(1), if_then_else(bool(true), int(2), Some(int(3))))
+        );
+
+        assert_eq!(
+            parse(tokenize("if true and false then a else 3").unwrap()).unwrap(),
+            if_then_else(and(bool(true), bool(false)), ide("a"), Some(int(3)))
         );
     }
 
