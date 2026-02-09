@@ -467,6 +467,13 @@ mod tests {
             parse(tokenize("a = b = c").unwrap()).unwrap(),
             assignment(ide("a"), assignment(ide("b"), ide("c")))
         );
+        assert_eq!(
+            parse(tokenize("f(a+b = b-c)").unwrap()).unwrap(),
+            function_call(
+                "f",
+                vec![assignment(add(ide("a"), ide("b")), sub(ide("b"), ide("c")))]
+            )
+        );
     }
 
     #[test]
