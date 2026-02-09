@@ -297,6 +297,13 @@ mod tests {
         }
     }
 
+    fn function_call(name: &str, arguments: Vec<ast::Expression>) -> ast::Expression {
+        ast::Expression::FunctionCall {
+            name: name.to_string(),
+            arguments,
+        }
+    }
+
     #[test]
     fn test_parser_addition() {
         assert_eq!(
@@ -376,6 +383,32 @@ mod tests {
         assert_eq!(
             parse(tokenize("1 + if true then 2 else 3").unwrap()).unwrap(),
             add(int(1), if_then_else(bool(true), int(2), Some(int(3))))
+        );
+    }
+
+    #[test]
+    fn test_parser_function_call() {
+        assert_eq!(
+            parse(tokenize("parse()").unwrap()).unwrap(),
+            function_call("parse", vec![])
+        );
+        assert_eq!(
+            parse(tokenize("f(a,b)").unwrap()).unwrap(),
+            function_call("f", vec![ide("a"), ide("b")])
+        );
+        assert_eq!(
+            parse(tokenize("hello(1+2)").unwrap()).unwrap(),
+            function_call("hello", vec![add(int(1), int(2))])
+        );
+        assert_eq!(
+            parse(tokenize("hello(1 + if true then 2 else 3, c)").unwrap()).unwrap(),
+            function_call(
+                "hello",
+                vec![
+                    add(int(1), if_then_else(bool(true), int(2), Some(int(3)))),
+                    ide("c")
+                ]
+            )
         );
     }
 }
