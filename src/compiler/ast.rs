@@ -31,6 +31,7 @@ pub enum Expression {
     BoolLiteral {
         value: bool,
     },
+    NoneLiteral,
     Identifier {
         value: String,
     },
