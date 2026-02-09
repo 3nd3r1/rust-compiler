@@ -3,6 +3,7 @@ use crate::compiler::{ast, tokenizer};
 struct Parser {
     tokens: Vec<tokenizer::Token>,
     pos: usize,
+    binary_operators: Vec<Vec<String>>,
 }
 
 impl Parser {
@@ -38,7 +39,7 @@ impl Parser {
     }
 
     fn parse(&mut self) -> Result<ast::Expression, String> {
-        let expression = self.parse_comparison()?;
+        let expression = self.parse_binary_operation(0)?;
 
         if self.peek().kind != tokenizer::TokenKind::End {
             return Err(format!(
@@ -51,55 +52,20 @@ impl Parser {
         Ok(expression)
     }
 
-    fn parse_comparison(&mut self) -> Result<ast::Expression, String> {
-        let mut left = self.parse_expression()?;
-
-        while self.peek().kind == tokenizer::TokenKind::Operator
-            && matches!(
-                self.peek().text.as_str(),
-                "<" | ">" | "==" | "!=" | "<=" | ">="
-            )
-        {
-            let operation = self.parse_operator()?;
-            let right = self.parse_expression()?;
-
-            left = ast::Expression::BinaryOp {
-                left: Box::new(left),
-                right: Box::new(right),
-                op: operation,
-            }
+    fn parse_binary_operation(&mut self, level: usize) -> Result<ast::Expression, String> {
+        if level >= self.binary_operators.len() {
+            return self.parse_factor();
         }
 
-        Ok(left)
-    }
+        let operators = self.binary_operators[level].clone();
 
-    fn parse_expression(&mut self) -> Result<ast::Expression, String> {
-        let mut left = self.parse_term()?;
+        let mut left = self.parse_binary_operation(level + 1)?;
 
         while self.peek().kind == tokenizer::TokenKind::Operator
-            && matches!(self.peek().text.as_str(), "+" | "-")
+            && operators.contains(&self.peek().text)
         {
-            let operation = self.parse_operator()?;
-            let right = self.parse_term()?;
-
-            left = ast::Expression::BinaryOp {
-                left: Box::new(left),
-                right: Box::new(right),
-                op: operation,
-            }
-        }
-
-        Ok(left)
-    }
-
-    fn parse_term(&mut self) -> Result<ast::Expression, String> {
-        let mut left = self.parse_factor()?;
-
-        while self.peek().kind == tokenizer::TokenKind::Operator
-            && matches!(self.peek().text.as_str(), "*" | "/")
-        {
-            let operation = self.parse_operator()?;
-            let right = self.parse_factor()?;
+            let operation = self.parse_operation()?;
+            let right = self.parse_binary_operation(level + 1)?;
 
             left = ast::Expression::BinaryOp {
                 left: Box::new(left),
@@ -167,7 +133,7 @@ impl Parser {
 
     fn parse_parenthesized(&mut self) -> Result<ast::Expression, String> {
         self.consume(tokenizer::TokenKind::Punctuation, Some("("))?;
-        let expression = self.parse_expression()?;
+        let expression = self.parse_binary_operation(0)?;
         self.consume(tokenizer::TokenKind::Punctuation, Some(")"))?;
 
         Ok(expression)
@@ -175,16 +141,16 @@ impl Parser {
 
     fn parse_if(&mut self) -> Result<ast::Expression, String> {
         self.consume(tokenizer::TokenKind::Keyword, Some("if"))?;
-        let condition = self.parse_comparison()?;
+        let condition = self.parse_binary_operation(0)?;
         self.consume(tokenizer::TokenKind::Keyword, Some("then"))?;
-        let then_expression = self.parse_expression()?;
+        let then_expression = self.parse_binary_operation(0)?;
 
         let else_expression: Option<ast::Expression> = if self.peek().kind
             == tokenizer::TokenKind::Keyword
             && self.peek().text.as_str() == "else"
         {
             self.consume(tokenizer::TokenKind::Keyword, Some("else"))?;
-            Some(self.parse_expression()?)
+            Some(self.parse_binary_operation(0)?)
         } else {
             None
         };
@@ -202,7 +168,7 @@ impl Parser {
         let mut arguments: Vec<ast::Expression> = vec![];
         if self.peek().text != ")" {
             loop {
-                arguments.push(self.parse_expression()?);
+                arguments.push(self.parse_binary_operation(0)?);
                 if self.peek().text != "," {
                     break;
                 } else {
@@ -215,7 +181,7 @@ impl Parser {
         Ok(ast::Expression::FunctionCall { name, arguments })
     }
 
-    fn parse_operator(&mut self) -> Result<ast::Operation, String> {
+    fn parse_operation(&mut self) -> Result<ast::Operation, String> {
         let token = self.consume(tokenizer::TokenKind::Operator, None)?;
         match token.text.as_str() {
             "+" => return Ok(ast::Operation::Addition),
@@ -236,7 +202,24 @@ impl Parser {
 }
 
 pub fn parse(tokens: Vec<tokenizer::Token>) -> Result<ast::Expression, String> {
-    let mut parser = Parser { tokens, pos: 0 };
+    let binary_operators = vec![
+        vec!["or"],
+        vec!["and"],
+        vec!["==", "!="],
+        vec!["<", "<=", ">", ">="],
+        vec!["+", "-"],
+        vec!["*", "/", "%"],
+    ]
+    .iter()
+    .map(|row| row.iter().map(|&s| s.to_string()).collect())
+    .collect();
+
+    let mut parser = Parser {
+        tokens,
+        pos: 0,
+        binary_operators,
+    };
+
     parser.parse()
 }
 
