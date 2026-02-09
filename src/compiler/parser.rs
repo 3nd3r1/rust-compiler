@@ -300,10 +300,10 @@ mod tests {
         }
     }
 
-    fn assignment(name: &str, value: ast::Expression) -> ast::Expression {
+    fn assignment(left: ast::Expression, right: ast::Expression) -> ast::Expression {
         ast::Expression::Assignment {
-            name: name.to_string(),
-            value: Box::new(value),
+            left: Box::new(left),
+            right: Box::new(right),
         }
     }
 
@@ -439,15 +439,15 @@ mod tests {
     fn test_parser_assignment() {
         assert_eq!(
             parse(tokenize("a = 3").unwrap()).unwrap(),
-            assignment("a", int(3))
+            assignment(ide("a"), int(3))
         );
         assert_eq!(
             parse(tokenize("hello = a+3").unwrap()).unwrap(),
-            assignment("hello", add(ide("a"), int(3)))
+            assignment(ide("hello"), add(ide("a"), int(3)))
         );
         assert_eq!(
             parse(tokenize("a = b = c").unwrap()).unwrap(),
-            assignment("a", assignment("b", ide("c")))
+            assignment(ide("a"), assignment(ide("b"), ide("c")))
         );
     }
 
