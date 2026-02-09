@@ -265,6 +265,10 @@ mod tests {
         binaryop(left, right, ast::Operation::And)
     }
 
+    fn or(left: ast::Expression, right: ast::Expression) -> ast::Expression {
+        binaryop(left, right, ast::Operation::Or)
+    }
+
     fn binaryop(
         left: ast::Expression,
         right: ast::Expression,
@@ -293,6 +297,28 @@ mod tests {
         ast::Expression::FunctionCall {
             name: name.to_string(),
             arguments,
+        }
+    }
+
+    fn assignment(name: &str, value: ast::Expression) -> ast::Expression {
+        ast::Expression::Assignment {
+            name: name.to_string(),
+            value: Box::new(value),
+        }
+    }
+
+    fn neg(operand: ast::Expression) -> ast::Expression {
+        unaryop(operand, ast::UnaryOperation::Neg)
+    }
+
+    fn not(operand: ast::Expression) -> ast::Expression {
+        unaryop(operand, ast::UnaryOperation::Not)
+    }
+
+    fn unaryop(operand: ast::Expression, op: ast::UnaryOperation) -> ast::Expression {
+        ast::Expression::UnaryOp {
+            operand: Box::new(operand),
+            op,
         }
     }
 
@@ -405,6 +431,45 @@ mod tests {
                     add(int(1), if_then_else(bool(true), int(2), Some(int(3)))),
                     ide("c")
                 ]
+            )
+        );
+    }
+
+    #[test]
+    fn test_parser_assignment() {
+        assert_eq!(
+            parse(tokenize("a = 3").unwrap()).unwrap(),
+            assignment("a", int(3))
+        );
+        assert_eq!(
+            parse(tokenize("hello = a+3").unwrap()).unwrap(),
+            assignment("hello", add(ide("a"), int(3)))
+        );
+        assert_eq!(
+            parse(tokenize("a = b = c").unwrap()).unwrap(),
+            assignment("a", assignment("b", ide("c")))
+        );
+    }
+
+    #[test]
+    fn test_parser_unary() {
+        assert_eq!(
+            parse(tokenize("not true").unwrap()).unwrap(),
+            not(bool(true))
+        );
+        assert_eq!(
+            parse(tokenize("not not a").unwrap()).unwrap(),
+            not(not(ide("a")))
+        );
+        assert_eq!(
+            parse(tokenize("-a + b").unwrap()).unwrap(),
+            add(neg(ide("a")), ide("b"))
+        );
+        assert_eq!(
+            parse(tokenize("(not not a and b and c) or (not b)").unwrap()).unwrap(),
+            or(
+                and(and(not(not(ide("a"))), ide("b")), ide("c")),
+                not(ide("b"))
             )
         );
     }
