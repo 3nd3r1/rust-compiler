@@ -59,4 +59,8 @@ pub enum Expression {
     Block {
         expressions: Vec<Expression>,
     },
+    While {
+        condition: Box<Expression>,
+        do_expression: Box<Expression>,
+    },
 }
