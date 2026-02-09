@@ -18,6 +18,12 @@ pub enum Operation {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub enum UnaryOperation {
+    Neg,
+    Not,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum Expression {
     IntLiteral {
         value: i32,
@@ -33,15 +39,21 @@ pub enum Expression {
         right: Box<Expression>,
         op: Operation,
     },
-
+    UnaryOp {
+        operand: Box<Expression>,
+        op: UnaryOperation,
+    },
     If {
         condition: Box<Expression>,
         then_expression: Box<Expression>,
         else_expression: Option<Box<Expression>>,
     },
-
     FunctionCall {
         name: String,
         arguments: Vec<Expression>,
+    },
+    Assignment {
+        name: String,
+        value: Box<Expression>,
     },
 }
