@@ -72,7 +72,7 @@ impl Parser {
 
     fn parse_binary_operation(&mut self, level: usize) -> Result<ast::Expression, String> {
         if level >= self.binary_operators.len() {
-            return self.parse_factor();
+            return self.parse_unary();
         }
 
         let operators = self.binary_operators[level].clone();
@@ -95,7 +95,20 @@ impl Parser {
         Ok(left)
     }
 
-    fn parse_factor(&mut self) -> Result<ast::Expression, String> {
+    fn parse_unary(&mut self) -> Result<ast::Expression, String> {
+        if matches!(self.peek().text.as_str(), "not" | "-") {
+            let operation = self.parse_unary_operation()?;
+            let operand = self.parse_unary()?;
+
+            return Ok(ast::Expression::UnaryOp {
+                operand: Box::new(operand),
+                op: operation,
+            });
+        }
+        self.parse_primary()
+    }
+
+    fn parse_primary(&mut self) -> Result<ast::Expression, String> {
         match self.peek().kind {
             tokenizer::TokenKind::IntLiteral => return self.parse_int_literal(),
             tokenizer::TokenKind::Identifier => return self.parse_identifier(),
@@ -106,15 +119,9 @@ impl Parser {
             tokenizer::TokenKind::Keyword if self.peek().text.as_str() == "if" => {
                 return self.parse_if();
             }
-            tokenizer::TokenKind::Keyword if self.peek().text.as_str() == "not" => {
-                return self.parse_unary();
-            }
-            tokenizer::TokenKind::Operator if self.peek().text.as_str() == "-" => {
-                return self.parse_unary();
-            }
             _ => {
                 return Err(format!(
-                    "{:?}: expected a literal, identifier, '(', 'if', 'not' or '-' got {:?}",
+                    "{:?}: expected a literal, identifier, '(' or 'if' got {:?}",
                     self.peek().loc,
                     self.peek().text
                 ));
@@ -184,16 +191,6 @@ impl Parser {
             condition: Box::new(condition),
             then_expression: Box::new(then_expression),
             else_expression: else_expression.map(Box::new),
-        })
-    }
-
-    fn parse_unary(&mut self) -> Result<ast::Expression, String> {
-        let operation = self.parse_unary_operation()?;
-        let operand = self.parse_factor()?;
-
-        Ok(ast::Expression::UnaryOp {
-            operand: Box::new(operand),
-            op: operation,
         })
     }
 
@@ -402,7 +399,7 @@ mod tests {
         assert!(
             parse(tokenize("").unwrap())
                 .unwrap_err()
-                .contains("expected a literal, identifier, '(', 'if', 'not' or '-'"),
+                .contains("expected a literal, identifier, '(' or 'if' got"),
         );
         assert!(
             parse(tokenize("a+b c").unwrap())
