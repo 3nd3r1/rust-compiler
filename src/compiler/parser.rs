@@ -20,7 +20,7 @@ impl Parser {
 
         if token.kind != token_kind {
             return Err(format!(
-                "{:?}: expected an {:?} got {:?}",
+                "{:?}: expected {:?} got {:?}",
                 token.loc, token_kind, token.kind
             ));
         }
@@ -451,6 +451,11 @@ mod tests {
                 .unwrap_err()
                 .contains("unexpected token")
         );
+        assert!(
+            parse(tokenize("{ 1 a }").unwrap())
+                .unwrap_err()
+                .contains("expected Punctuation got Identifier")
+        );
     }
 
     #[test]
@@ -640,10 +645,7 @@ mod tests {
                             ide("y"),
                             if_then_else(
                                 function_call("g", vec![ide("x")]),
-                                block(vec![
-                                    assignment(ide("x"), add(ide("x"), int(1))),
-                                    ide("x")
-                                ]),
+                                block(vec![assignment(ide("x"), add(ide("x"), int(1))), ide("x")]),
                                 Some(block(vec![function_call("g", vec![ide("x")])]))
                             )
                         ),
