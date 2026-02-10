@@ -63,7 +63,7 @@ pub fn tokenize(source_code: &str) -> Result<Vec<Token>, String> {
                 let token = Token {
                     kind: token_kind.clone(),
                     text: matched.as_str().to_string(),
-                    loc: TokenLocation { line: 0, column: 0 },
+                    loc: Location { line: 0, column: 0 },
                 };
                 tokens.push(token);
                 remaining_code = &remaining_code[matched.end()..];
@@ -83,7 +83,7 @@ pub fn tokenize(source_code: &str) -> Result<Vec<Token>, String> {
         loc: tokens
             .last()
             .map(|t| t.loc.clone())
-            .unwrap_or(TokenLocation { line: 1, column: 1 }),
+            .unwrap_or(Location { line: 1, column: 1 }),
     });
     Ok(tokens)
 }
