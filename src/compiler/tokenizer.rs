@@ -1,3 +1,4 @@
+use crate::compiler::common::Location;
 use regex::Regex;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -12,16 +13,10 @@ pub enum TokenKind {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct TokenLocation {
-    pub line: u32,
-    pub column: u32,
-}
-
-#[derive(Debug, Clone, PartialEq)]
 pub struct Token {
     pub kind: TokenKind,
     pub text: String,
-    pub loc: TokenLocation,
+    pub loc: Location,
 }
 
 pub fn tokenize(source_code: &str) -> Result<Vec<Token>, String> {
