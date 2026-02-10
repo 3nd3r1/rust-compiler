@@ -733,7 +733,10 @@ mod tests {
         );
         assert_eq!(
             parse(tokenize("{ var a = { var b = 1; b } }").unwrap()).unwrap(),
-            block(vec![var_decl("a", block(vec![var_decl("b", int(1)), ide("b")]))])
+            block(vec![var_decl(
+                "a",
+                block(vec![var_decl("b", int(1)), ide("b")])
+            )])
         );
 
         // Invalid
@@ -751,6 +754,59 @@ mod tests {
             parse(tokenize("f(var a = 1)").unwrap())
                 .unwrap_err()
                 .contains("expected")
+        );
+    }
+
+    #[test]
+    fn test_parser_block_semicolon() {
+        assert_eq!(
+            parse(tokenize("{ { a } { b } }").unwrap()).unwrap(),
+            block(vec![block(vec![ide("a")]), block(vec![ide("b")])])
+        );
+        assert!(parse(tokenize("{ a b }").unwrap()).is_err());
+        assert_eq!(
+            parse(tokenize("{ if true then { a } b }").unwrap()).unwrap(),
+            block(vec![
+                if_then_else(bool(true), block(vec![ide("a")]), None),
+                ide("b")
+            ])
+        );
+        assert_eq!(
+            parse(tokenize("{ if true then { a }; b }").unwrap()).unwrap(),
+            block(vec![
+                if_then_else(bool(true), block(vec![ide("a")]), None),
+                ide("b")
+            ])
+        );
+        assert!(parse(tokenize("{ if true then { a } b c }").unwrap()).is_err());
+        assert_eq!(
+            parse(tokenize("{ if true then { a } b; c }").unwrap()).unwrap(),
+            block(vec![
+                if_then_else(bool(true), block(vec![ide("a")]), None),
+                ide("b"),
+                ide("c")
+            ])
+        );
+        assert_eq!(
+            parse(tokenize("{ if true then { a } else { b } c }").unwrap()).unwrap(),
+            block(vec![
+                if_then_else(
+                    bool(true),
+                    block(vec![ide("a")]),
+                    Some(block(vec![ide("b")]))
+                ),
+                ide("c")
+            ])
+        );
+        assert_eq!(
+            parse(tokenize("x = { { f(a) } { b } }").unwrap()).unwrap(),
+            assignment(
+                ide("x"),
+                block(vec![
+                    block(vec![function_call("f", vec![ide("a")])]),
+                    block(vec![ide("b")])
+                ])
+            )
         );
     }
 }
