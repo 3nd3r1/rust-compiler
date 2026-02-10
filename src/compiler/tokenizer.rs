@@ -91,36 +91,71 @@ pub fn tokenize(source_code: &str) -> Result<Vec<Token>, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use TokenKind::*;
+    use crate::compiler::common;
 
-    fn tokenize_without_loc(source_code: &str) -> Vec<(TokenKind, String)> {
+    fn loc() -> common::Location {
+        common::Location { line: 0, column: 0 }
+    }
+
+    fn tokenize_without_loc(source_code: &str) -> Vec<Token> {
         let mut tokens = tokenize(source_code).unwrap();
         tokens.pop();
-        tokens.into_iter().map(|t| (t.kind, t.text)).collect()
+        tokens
+            .into_iter()
+            .map(|t| Token {
+                kind: t.kind,
+                text: t.text,
+                loc: loc(),
+            })
+            .collect()
     }
 
-    fn bool(value: &str) -> (TokenKind, String) {
-        (BoolLiteral, value.into())
+    fn bool(value: &str) -> Token {
+        Token {
+            kind: TokenKind::BoolLiteral,
+            text: value.into(),
+            loc: loc(),
+        }
     }
 
-    fn int(value: &str) -> (TokenKind, String) {
-        (IntLiteral, value.into())
+    fn int(value: &str) -> Token {
+        Token {
+            kind: TokenKind::IntLiteral,
+            text: value.into(),
+            loc: loc(),
+        }
     }
 
-    fn ide(value: &str) -> (TokenKind, String) {
-        (Identifier, value.into())
+    fn ide(value: &str) -> Token {
+        Token {
+            kind: TokenKind::Identifier,
+            text: value.into(),
+            loc: loc(),
+        }
     }
 
-    fn keyw(value: &str) -> (TokenKind, String) {
-        (Keyword, value.into())
+    fn keyw(value: &str) -> Token {
+        Token {
+            kind: TokenKind::Keyword,
+            text: value.into(),
+            loc: loc(),
+        }
     }
 
-    fn ope(value: &str) -> (TokenKind, String) {
-        (Operator, value.into())
+    fn ope(value: &str) -> Token {
+        Token {
+            kind: TokenKind::Operator,
+            text: value.into(),
+            loc: loc(),
+        }
     }
 
-    fn punc(value: &str) -> (TokenKind, String) {
-        (Punctuation, value.into())
+    fn punc(value: &str) -> Token {
+        Token {
+            kind: TokenKind::Punctuation,
+            text: value.into(),
+            loc: loc(),
+        }
     }
 
     #[test]
