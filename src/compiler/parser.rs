@@ -55,7 +55,11 @@ impl Parser {
             }
 
             if self.peek().text != ";" {
-                break;
+                if self.ends_with_block(expressions.last().unwrap()) {
+                    continue;
+                } else {
+                    break;
+                }
             } else {
                 self.consume(tokenizer::TokenKind::Punctuation, Some(";"))?;
             }
@@ -241,8 +245,8 @@ impl Parser {
 
     fn parse_block(&mut self) -> Result<ast::Expression, String> {
         self.consume(tokenizer::TokenKind::Punctuation, Some("{"))?;
-        let mut expressions: Vec<ast::Expression> = vec![];
-        loop {
+        let mut expressions = vec![];
+        while self.peek().text.as_str() != "}" {
             if self.peek().kind == tokenizer::TokenKind::Keyword
                 && self.peek().text.as_str() == "var"
             {
@@ -250,8 +254,13 @@ impl Parser {
             } else {
                 expressions.push(self.parse_expression()?);
             }
+
             if self.peek().text != ";" {
-                break;
+                if self.ends_with_block(expressions.last().unwrap()) {
+                    continue;
+                } else {
+                    break;
+                }
             } else {
                 self.consume(tokenizer::TokenKind::Punctuation, Some(";"))?;
                 if self.peek().text.as_str() == "}" {
@@ -327,6 +336,27 @@ impl Parser {
             _ => {
                 return Err(format!("{:?}: expected '-' or 'not'", token.loc));
             }
+        }
+    }
+
+    fn ends_with_block(&mut self, expression: &ast::Expression) -> bool {
+        match expression {
+            ast::Expression::Block { .. } => true,
+            ast::Expression::If {
+                then_expression,
+                else_expression,
+                ..
+            } => {
+                if let Some(else_expression) = else_expression {
+                    matches!(**else_expression, ast::Expression::Block { .. })
+                } else {
+                    matches!(**then_expression, ast::Expression::Block { .. })
+                }
+            }
+            ast::Expression::While { do_expression, .. } => {
+                matches!(**do_expression, ast::Expression::Block { .. })
+            }
+            _ => false,
         }
     }
 }
