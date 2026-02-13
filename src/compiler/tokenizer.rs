@@ -89,11 +89,11 @@ pub fn tokenize(source_code: &str) -> Result<Vec<Token>, String> {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::*;
     use crate::compiler::common;
 
-    fn loc() -> common::Location {
+    pub fn loc() -> common::Location {
         common::Location { line: 0, column: 0 }
     }
 
@@ -110,7 +110,7 @@ mod tests {
             .collect()
     }
 
-    fn bool(value: &str) -> Token {
+    pub fn tbool(value: &str) -> Token {
         Token {
             kind: TokenKind::BoolLiteral,
             text: value.into(),
@@ -118,7 +118,7 @@ mod tests {
         }
     }
 
-    fn int(value: &str) -> Token {
+    pub fn tint(value: &str) -> Token {
         Token {
             kind: TokenKind::IntLiteral,
             text: value.into(),
@@ -126,7 +126,7 @@ mod tests {
         }
     }
 
-    fn ide(value: &str) -> Token {
+    pub fn tide(value: &str) -> Token {
         Token {
             kind: TokenKind::Identifier,
             text: value.into(),
@@ -134,7 +134,7 @@ mod tests {
         }
     }
 
-    fn keyw(value: &str) -> Token {
+    pub fn tkeyw(value: &str) -> Token {
         Token {
             kind: TokenKind::Keyword,
             text: value.into(),
@@ -142,7 +142,7 @@ mod tests {
         }
     }
 
-    fn ope(value: &str) -> Token {
+    pub fn tope(value: &str) -> Token {
         Token {
             kind: TokenKind::Operator,
             text: value.into(),
@@ -150,10 +150,18 @@ mod tests {
         }
     }
 
-    fn punc(value: &str) -> Token {
+    pub fn tpunc(value: &str) -> Token {
         Token {
             kind: TokenKind::Punctuation,
             text: value.into(),
+            loc: loc(),
+        }
+    }
+
+    pub fn tend() -> Token {
+        Token {
+            kind: TokenKind::End,
+            text: "".into(),
             loc: loc(),
         }
     }
@@ -162,42 +170,42 @@ mod tests {
     fn test_tokenizer_basics() {
         assert_eq!(
             tokenize_without_loc("if  3\nwhile"),
-            vec![keyw("if"), int("3"), keyw("while")]
+            vec![tkeyw("if"), tint("3"), tkeyw("while")]
         );
         assert_eq!(
             tokenize_without_loc("if true then 1 else 0"),
             vec![
-                keyw("if"),
-                bool("true"),
-                keyw("then"),
-                int("1"),
-                keyw("else"),
-                int("0"),
+                tkeyw("if"),
+                tbool("true"),
+                tkeyw("then"),
+                tint("1"),
+                tkeyw("else"),
+                tint("0"),
             ]
         );
     }
 
     #[test]
     fn test_tokenizer_valid_identifiers() {
-        assert_eq!(tokenize_without_loc("hello"), vec![ide("hello")]);
-        assert_eq!(tokenize_without_loc("HELLO"), vec![ide("HELLO")]);
-        assert_eq!(tokenize_without_loc("hEl_LO"), vec![ide("hEl_LO")]);
-        assert_eq!(tokenize_without_loc("__hello"), vec![ide("__hello")]);
-        assert_eq!(tokenize_without_loc("_hEl_LO"), vec![ide("_hEl_LO")]);
-        assert_eq!(tokenize_without_loc("_hE12lLO"), vec![ide("_hE12lLO")]);
+        assert_eq!(tokenize_without_loc("hello"), vec![tide("hello")]);
+        assert_eq!(tokenize_without_loc("HELLO"), vec![tide("HELLO")]);
+        assert_eq!(tokenize_without_loc("hEl_LO"), vec![tide("hEl_LO")]);
+        assert_eq!(tokenize_without_loc("__hello"), vec![tide("__hello")]);
+        assert_eq!(tokenize_without_loc("_hEl_LO"), vec![tide("_hEl_LO")]);
+        assert_eq!(tokenize_without_loc("_hE12lLO"), vec![tide("_hE12lLO")]);
     }
 
     #[test]
     fn test_tokenizer_literals() {
-        assert_eq!(tokenize_without_loc("0"), vec![int("0")]);
-        assert_eq!(tokenize_without_loc("123"), vec![int("123")]);
+        assert_eq!(tokenize_without_loc("0"), vec![tint("0")]);
+        assert_eq!(tokenize_without_loc("123"), vec![tint("123")]);
         assert_eq!(
             tokenize_without_loc("123 123  11"),
-            vec![int("123"), int("123"), int("11")]
+            vec![tint("123"), tint("123"), tint("11")]
         );
         assert_eq!(
             tokenize_without_loc("000 123 123  11"),
-            vec![int("000"), int("123"), int("123"), int("11")]
+            vec![tint("000"), tint("123"), tint("123"), tint("11")]
         );
     }
 
@@ -205,7 +213,7 @@ mod tests {
     fn test_tokenizer_whitespace() {
         assert_eq!(
             tokenize_without_loc("moi  miten\n menee\t sulla"),
-            vec![ide("moi"), ide("miten"), ide("menee"), ide("sulla")]
+            vec![tide("moi"), tide("miten"), tide("menee"), tide("sulla")]
         );
     }
 
@@ -219,44 +227,44 @@ mod tests {
 
     #[test]
     fn test_tokenizer_operators() {
-        assert_eq!(tokenize_without_loc("+"), vec![ope("+")]);
-        assert_eq!(tokenize_without_loc("<="), vec![ope("<=")]);
-        assert_eq!(tokenize_without_loc("+-"), vec![ope("+"), ope("-")]);
-        assert_eq!(tokenize_without_loc("<<"), vec![ope("<"), ope("<")]);
+        assert_eq!(tokenize_without_loc("+"), vec![tope("+")]);
+        assert_eq!(tokenize_without_loc("<="), vec![tope("<=")]);
+        assert_eq!(tokenize_without_loc("+-"), vec![tope("+"), tope("-")]);
+        assert_eq!(tokenize_without_loc("<<"), vec![tope("<"), tope("<")]);
         assert_eq!(
             tokenize_without_loc("+-<<=>="),
-            vec![ope("+"), ope("-"), ope("<"), ope("<="), ope(">=")]
+            vec![tope("+"), tope("-"), tope("<"), tope("<="), tope(">=")]
         );
         assert_eq!(
             tokenize_without_loc("1+1=2"),
-            vec![int("1"), ope("+"), int("1"), ope("="), int("2")]
+            vec![tint("1"), tope("+"), tint("1"), tope("="), tint("2")]
         );
         assert_eq!(
             tokenize_without_loc("true or false"),
-            vec![bool("true"), ope("or"), bool("false")]
+            vec![tbool("true"), tope("or"), tbool("false")]
         );
     }
 
     #[test]
     fn test_tokenizer_punctuation() {
-        assert_eq!(tokenize_without_loc(","), vec![punc(",")]);
-        assert_eq!(tokenize_without_loc(";;"), vec![punc(";"), punc(";")]);
-        assert_eq!(tokenize_without_loc("{}"), vec![punc("{"), punc("}")]);
-        assert_eq!(tokenize_without_loc("()"), vec![punc("("), punc(")")]);
+        assert_eq!(tokenize_without_loc(","), vec![tpunc(",")]);
+        assert_eq!(tokenize_without_loc(";;"), vec![tpunc(";"), tpunc(";")]);
+        assert_eq!(tokenize_without_loc("{}"), vec![tpunc("{"), tpunc("}")]);
+        assert_eq!(tokenize_without_loc("()"), vec![tpunc("("), tpunc(")")]);
         assert_eq!(
             tokenize_without_loc("(){,;}"),
             vec![
-                punc("("),
-                punc(")"),
-                punc("{"),
-                punc(","),
-                punc(";"),
-                punc("}")
+                tpunc("("),
+                tpunc(")"),
+                tpunc("{"),
+                tpunc(","),
+                tpunc(";"),
+                tpunc("}")
             ]
         );
         assert_eq!(
             tokenize_without_loc("1+1=2"),
-            vec![int("1"), ope("+"), int("1"), ope("="), int("2")]
+            vec![tint("1"), tope("+"), tint("1"), tope("="), tint("2")]
         );
     }
 
@@ -267,26 +275,26 @@ mod tests {
         assert_eq!(tokenize_without_loc("/* hello */"), vec![]);
         assert_eq!(
             tokenize_without_loc("hello # hello hello"),
-            vec![ide("hello")]
+            vec![tide("hello")]
         );
         assert_eq!(
             tokenize_without_loc("hello # hello hello\n 1"),
-            vec![ide("hello"), int("1")]
+            vec![tide("hello"), tint("1")]
         );
         assert_eq!(
             tokenize_without_loc("hello 1 # this is a comment\n a=2 // comment # comment\n 2"),
             vec![
-                ide("hello"),
-                int("1"),
-                ide("a"),
-                ope("="),
-                int("2"),
-                int("2")
+                tide("hello"),
+                tint("1"),
+                tide("a"),
+                tope("="),
+                tint("2"),
+                tint("2")
             ]
         );
         assert_eq!(
             tokenize_without_loc("hello /* hello\n hi=1 */ 1"),
-            vec![ide("hello"), int("1")]
+            vec![tide("hello"), tint("1")]
         );
     }
 
@@ -297,21 +305,21 @@ mod tests {
                 "moi1 123  hello 23 21 _var1 //this is a comment\n if 23 == 23 /* this\n is\n a multi-line comment */ 1+a=32"
             ),
             vec![
-                ide("moi1"),
-                int("123"),
-                ide("hello"),
-                int("23"),
-                int("21"),
-                ide("_var1"),
-                keyw("if"),
-                int("23"),
-                ope("=="),
-                int("23"),
-                int("1"),
-                ope("+"),
-                ide("a"),
-                ope("="),
-                int("32")
+                tide("moi1"),
+                tint("123"),
+                tide("hello"),
+                tint("23"),
+                tint("21"),
+                tide("_var1"),
+                tkeyw("if"),
+                tint("23"),
+                tope("=="),
+                tint("23"),
+                tint("1"),
+                tope("+"),
+                tide("a"),
+                tope("="),
+                tint("32")
             ]
         );
     }
