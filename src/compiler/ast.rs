@@ -19,10 +19,41 @@ pub enum Operation {
     And,
 }
 
+impl std::fmt::Display for Operation {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let s = match self {
+            Operation::Addition => "+",
+            Operation::Substraction => "-",
+            Operation::Multiplication => "*",
+            Operation::Division => "/",
+            Operation::Modulo => "%",
+            Operation::LessThan => "<",
+            Operation::GreaterThan => ">",
+            Operation::Equal => "==",
+            Operation::NotEqual => "!=",
+            Operation::LessThanOrEqual => "<=",
+            Operation::GreaterThanOrEqual => ">=",
+            Operation::Or => "or",
+            Operation::And => "and",
+        };
+        write!(f, "{}", s)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum UnaryOperation {
     Neg,
     Not,
+}
+
+impl std::fmt::Display for UnaryOperation {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let s = match self {
+            UnaryOperation::Neg => "-",
+            UnaryOperation::Not => "not",
+        };
+        write!(f, "{}", s)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
