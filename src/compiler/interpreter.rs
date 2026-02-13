@@ -2,11 +2,23 @@ use std::{collections::HashMap, rc::Rc};
 
 use crate::compiler::ast;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub enum Value {
     Int(i32),
     Bool(bool),
+    BuiltInFunction(fn(Vec<Value>) -> Result<Value, String>),
     None,
+}
+
+impl PartialEq for Value {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Value::Int(a), Value::Int(b)) => a == b,
+            (Value::Bool(a), Value::Bool(b)) => a == b,
+            (Value::None, Value::None) => true,
+            _ => false,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
