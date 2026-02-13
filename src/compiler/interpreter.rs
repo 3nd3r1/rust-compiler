@@ -41,7 +41,7 @@ pub fn interpret(node: &ast::Expression, symtab: &mut SymTab) -> Result<Value, S
             if let Some(Value::BuiltInFunction(func)) = symtab.locals.get(&key) {
                 func(vec![left, right])
             } else {
-                Err(format!("unexpected operator {:?}", op))
+                Err(format!("unexpected operator {}", op))
             }
         }
         ast::ExpressionKind::UnaryOp { operand, op } => {
@@ -92,6 +92,37 @@ pub fn interpret(node: &ast::Expression, symtab: &mut SymTab) -> Result<Value, S
     }
 }
 
+pub mod builtins {
+    use super::*;
+
+    pub fn addition(args: Vec<Value>) -> Result<Value, String> {
+        match (&args[0], &args[1]) {
+            (Value::Int(left), Value::Int(right)) => Ok(Value::Int(left + right)),
+            _ => Err(format!("expected two integers")),
+        }
+    }
+
+    pub fn unary_neg(args: Vec<Value>) -> Result<Value, String> {
+        match &args[0] {
+            Value::Int(operand) => Ok(Value::Int(-operand)),
+            _ => Err(format!("expected one integer")),
+        }
+    }
+
+    pub fn build_builtin_lib() -> HashMap<String, Value> {
+        use Value::BuiltInFunction;
+        use ast::Operation::*;
+        use ast::UnaryOperation::*;
+
+        let mut lib = HashMap::new();
+
+        lib.insert(format!("{}", Addition), BuiltInFunction(addition));
+        lib.insert(format!("unary_{}", Neg), BuiltInFunction(unary_neg));
+
+        lib
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -99,7 +130,7 @@ mod tests {
 
     fn empty_symtab() -> SymTab {
         SymTab {
-            locals: HashMap::new(),
+            locals: builtins::build_builtin_lib(),
             parent: None,
         }
     }
