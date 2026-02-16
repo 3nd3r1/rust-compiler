@@ -72,15 +72,18 @@ impl TypeSymTab {
     }
 }
 
-pub fn typecheck(node: &ast::Expression, symtab: &Rc<RefCell<TypeSymTab>>) -> Result<Type, String> {
-    match &node.kind {
+pub fn typecheck(
+    node: &mut ast::Expression,
+    symtab: &Rc<RefCell<TypeSymTab>>,
+) -> Result<Type, String> {
+    let return_type = match &mut node.kind {
         ast::ExpressionKind::NoneLiteral { .. } => Ok(Type::Unit),
         ast::ExpressionKind::IntLiteral { .. } => Ok(Type::Int),
         ast::ExpressionKind::BoolLiteral { .. } => Ok(Type::Bool),
         ast::ExpressionKind::Identifier { value } => symtab.borrow().lookup(value),
         ast::ExpressionKind::BinaryOp { left, right, op } => {
-            let left_type = typecheck(&*left, symtab)?;
-            let right_type = typecheck(&*right, symtab)?;
+            let left_type = typecheck(&mut *left, symtab)?;
+            let right_type = typecheck(&mut *right, symtab)?;
 
             match &op {
                 ast::Operation::Equal | ast::Operation::NotEqual => {
@@ -123,7 +126,7 @@ pub fn typecheck(node: &ast::Expression, symtab: &Rc<RefCell<TypeSymTab>>) -> Re
             }
         }
         ast::ExpressionKind::UnaryOp { operand, op } => {
-            let operand_type = typecheck(&*operand, symtab)?;
+            let operand_type = typecheck(&mut *operand, symtab)?;
 
             let identifier = format!("unary_{}", op);
             let func = symtab.borrow().lookup(&identifier)?;
@@ -155,16 +158,16 @@ pub fn typecheck(node: &ast::Expression, symtab: &Rc<RefCell<TypeSymTab>>) -> Re
             then_expression,
             else_expression,
         } => {
-            let condition_type = typecheck(&*condition, symtab)?;
+            let condition_type = typecheck(&mut *condition, symtab)?;
             if condition_type != Type::Bool {
                 Err(format!(
                     "expected condition to be of type bool got {}",
                     condition_type
                 ))
             } else {
-                let then_type = typecheck(&*then_expression, symtab)?;
+                let then_type = typecheck(&mut *then_expression, symtab)?;
                 if let Some(else_expression) = else_expression {
-                    let else_type = typecheck(&*else_expression, symtab)?;
+                    let else_type = typecheck(&mut *else_expression, symtab)?;
 
                     if then_type != else_type {
                         return Err(format!(
@@ -181,7 +184,7 @@ pub fn typecheck(node: &ast::Expression, symtab: &Rc<RefCell<TypeSymTab>>) -> Re
             value,
             value_type,
         } => {
-            let actual_value_type = typecheck(&*value, symtab)?;
+            let actual_value_type = typecheck(&mut *value, symtab)?;
             if let Some(value_type) = value_type {
                 if actual_value_type != **value_type {
                     return Err(format!(
@@ -198,7 +201,7 @@ pub fn typecheck(node: &ast::Expression, symtab: &Rc<RefCell<TypeSymTab>>) -> Re
             Ok(Type::Unit)
         }
         ast::ExpressionKind::Assignment { name, right } => {
-            let value_type = typecheck(&*right, symtab)?;
+            let value_type = typecheck(&mut *right, symtab)?;
             symtab.borrow_mut().assign(name, value_type.clone())?;
             Ok(value_type)
         }
@@ -208,7 +211,7 @@ pub fn typecheck(node: &ast::Expression, symtab: &Rc<RefCell<TypeSymTab>>) -> Re
                 parent: Some(Rc::clone(symtab)),
             }));
 
-            if let Some((last, expressions)) = expressions.split_last() {
+            if let Some((last, expressions)) = expressions.split_last_mut() {
                 for expression in expressions {
                     typecheck(expression, &block_symtab)?;
                 }
@@ -221,7 +224,7 @@ pub fn typecheck(node: &ast::Expression, symtab: &Rc<RefCell<TypeSymTab>>) -> Re
             condition,
             do_expression: _,
         } => {
-            let condition_type = typecheck(&*condition, symtab)?;
+            let condition_type = typecheck(&mut *condition, symtab)?;
             if condition_type != Type::Bool {
                 Err(format!(
                     "expected condition to be of type {} got {}",
@@ -248,12 +251,12 @@ pub fn typecheck(node: &ast::Expression, symtab: &Rc<RefCell<TypeSymTab>>) -> Re
                         arguments.len()
                     ))
                 } else {
-                    for i in 0..arguments.len() {
-                        let argument_type = typecheck(&arguments[i], symtab)?;
-                        if argument_type != params[i] {
+                    for (param_type, argument) in params.iter().zip(arguments.iter_mut()) {
+                        let argument_type = typecheck(argument, symtab)?;
+                        if argument_type != *param_type {
                             return Err(format!(
-                                "Function {} expected argument {} to be of type {}, got {}",
-                                name, i, params[i], argument_type
+                                "Function {} expected argument to be of type {}, got {}",
+                                name, param_type, argument_type
                             ));
                         }
                     }
@@ -266,7 +269,10 @@ pub fn typecheck(node: &ast::Expression, symtab: &Rc<RefCell<TypeSymTab>>) -> Re
                 ))
             }
         }
-    }
+    }?;
+
+    node.return_type = Some(return_type.clone());
+    Ok(return_type)
 }
 
 pub mod builtin_types {
@@ -331,15 +337,15 @@ mod tests {
         }
     }
 
-    fn tc(node: &ast::Expression) -> Result<Type, String> {
-        typecheck(node, &Rc::new(RefCell::new(empty_symtab())))
+    fn tc(mut node: ast::Expression) -> Result<Type, String> {
+        typecheck(&mut node, &Rc::new(RefCell::new(empty_symtab())))
     }
 
     #[test]
     fn test_typechecker_binary() {
-        assert_eq!(tc(&eadd(eint(2), eint(3))).unwrap(), Type::Int);
+        assert_eq!(tc(eadd(eint(2), eint(3))).unwrap(), Type::Int);
         assert!(
-            tc(&eadd(eint(2), ebool(false)))
+            tc(eadd(eint(2), ebool(false)))
                 .unwrap_err()
                 .contains("operator + expected (Int, Int), got (Int, Bool)")
         );
@@ -347,9 +353,9 @@ mod tests {
 
     #[test]
     fn test_typechecker_unary() {
-        assert_eq!(tc(&eneg(eint(2))).unwrap(), Type::Int);
+        assert_eq!(tc(eneg(eint(2))).unwrap(), Type::Int);
         assert!(
-            tc(&enot(eint(2)))
+            tc(enot(eint(2)))
                 .unwrap_err()
                 .contains("operator not expected (Bool), got (Int)")
         );
@@ -358,7 +364,7 @@ mod tests {
     #[test]
     fn test_typechecker_assignment() {
         assert_eq!(
-            tc(&eblock(vec![
+            tc(eblock(vec![
                 evar("a", eint(3), None),
                 evar("b", eint(2), None),
                 eadd(eide("a"), eide("b"))
@@ -367,7 +373,7 @@ mod tests {
             Type::Int
         );
         assert!(
-            tc(&eblock(vec![
+            tc(eblock(vec![
                 evar("a", eint(3), None),
                 eadd(eide("a"), eide("b"))
             ]))
@@ -379,7 +385,7 @@ mod tests {
     #[test]
     fn test_typechecker_var_declaration() {
         assert_eq!(
-            tc(&eblock(vec![
+            tc(eblock(vec![
                 evar("a", eint(3), Some(Type::Int)),
                 evar("b", eint(2), None),
                 eadd(eide("a"), eide("b"))
@@ -388,7 +394,7 @@ mod tests {
             Type::Int
         );
         assert!(
-            tc(&eblock(vec![
+            tc(eblock(vec![
                 evar("a", eint(3), Some(Type::Bool)),
                 eadd(eide("a"), eint(1))
             ]))
@@ -400,7 +406,7 @@ mod tests {
     #[test]
     fn test_typechecker_while() {
         assert_eq!(
-            tc(&eblock(vec![
+            tc(eblock(vec![
                 evar("a", eint(0), None),
                 ewhile(
                     elt(eide("a"), eint(5)),
@@ -411,5 +417,21 @@ mod tests {
             .unwrap(),
             Type::Int
         );
+    }
+
+    #[test]
+    fn test_typechecker_expression_types() {
+        let mut node = eadd(eint(2), eint(3));
+        assert_eq!(node.return_type, None);
+
+        let result = typecheck(&mut node, &Rc::new(RefCell::new(empty_symtab()))).unwrap();
+
+        assert_eq!(result, Type::Int);
+        assert_eq!(node.return_type, Some(Type::Int));
+
+        if let ast::ExpressionKind::BinaryOp { left, right, .. } = &node.kind {
+            assert_eq!(left.return_type, Some(Type::Int));
+            assert_eq!(right.return_type, Some(Type::Int));
+        }
     }
 }
