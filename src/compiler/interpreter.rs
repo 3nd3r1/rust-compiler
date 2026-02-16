@@ -106,7 +106,11 @@ pub fn interpret(node: &ast::Expression, symtab: &Rc<RefCell<SymTab>>) -> Result
                 (cond, _, _) => Err(format!("unexpected condition {:?}", cond)),
             }
         }
-        ast::ExpressionKind::VarDeclaration { name, value } => {
+        ast::ExpressionKind::VarDeclaration {
+            name,
+            value,
+            value_type: _,
+        } => {
             let value = interpret(&*value, symtab)?;
             symtab.borrow_mut().declare(name, value);
             Ok(Value::None)
@@ -331,8 +335,8 @@ mod tests {
     fn test_interpreter_assignment() {
         assert_eq!(
             ip(&eblock(vec![
-                evar("a", eint(3)),
-                evar("b", eint(2)),
+                evar("a", eint(3), None),
+                evar("b", eint(2), None),
                 eadd(eide("a"), eide("b"))
             ]))
             .unwrap(),
@@ -341,8 +345,8 @@ mod tests {
 
         assert_eq!(
             ip(&eblock(vec![
-                evar("a", eint(3)),
-                evar("b", eint(2)),
+                evar("a", eint(3), None),
+                evar("b", eint(2), None),
                 eassign("a", eassign("b", eint(6)))
             ]))
             .unwrap(),
@@ -354,7 +358,7 @@ mod tests {
     fn test_interpreter_while() {
         assert_eq!(
             ip(&eblock(vec![
-                evar("a", eint(0)),
+                evar("a", eint(0), None),
                 ewhile(
                     elt(eide("a"), eint(5)),
                     eassign("a", eadd(eide("a"), eint(1)))
@@ -370,7 +374,7 @@ mod tests {
     fn test_interpreter_short_circuit() {
         assert_eq!(
             ip(&eblock(vec![
-                evar("a", ebool(false)),
+                evar("a", ebool(false), None),
                 eor(
                     ebool(true),
                     eblock(vec![eassign("a", ebool(true)), ebool(true)])
