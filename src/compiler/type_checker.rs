@@ -176,7 +176,11 @@ pub fn typecheck(node: &ast::Expression, symtab: &Rc<RefCell<TypeSymTab>>) -> Re
                 Ok(then_type)
             }
         }
-        ast::ExpressionKind::VarDeclaration { name, value } => {
+        ast::ExpressionKind::VarDeclaration {
+            name,
+            value,
+            value_type: _,
+        } => {
             let value_type = typecheck(&*value, symtab)?;
             symtab.borrow_mut().declare(name, value_type);
             Ok(Type::Unit)
@@ -343,8 +347,8 @@ mod tests {
     fn test_typechecker_assignment() {
         assert_eq!(
             tc(&eblock(vec![
-                evar("a", eint(3)),
-                evar("b", eint(2)),
+                evar("a", eint(3), None),
+                evar("b", eint(2), None),
                 eadd(eide("a"), eide("b"))
             ]))
             .unwrap(),
@@ -352,7 +356,7 @@ mod tests {
         );
         assert!(
             tc(&eblock(vec![
-                evar("a", eint(3)),
+                evar("a", eint(3), None),
                 eadd(eide("a"), eide("b"))
             ]))
             .unwrap_err()
@@ -364,7 +368,7 @@ mod tests {
     fn test_typechecker_while() {
         assert_eq!(
             tc(&eblock(vec![
-                evar("a", eint(0)),
+                evar("a", eint(0), None),
                 ewhile(
                     elt(eide("a"), eint(5)),
                     eassign("a", eadd(eide("a"), eint(1)))
