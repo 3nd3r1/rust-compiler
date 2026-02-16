@@ -179,10 +179,14 @@ pub fn typecheck(node: &ast::Expression, symtab: &Rc<RefCell<TypeSymTab>>) -> Re
         ast::ExpressionKind::VarDeclaration {
             name,
             value,
-            value_type: _,
+            value_type,
         } => {
-            let value_type = typecheck(&*value, symtab)?;
-            symtab.borrow_mut().declare(name, value_type);
+            if let Some(value_type) = value_type {
+                symtab.borrow_mut().declare(name, *value_type.clone());
+            } else {
+                let value_type = typecheck(&*value, symtab)?;
+                symtab.borrow_mut().declare(name, value_type);
+            }
             Ok(Type::Unit)
         }
         ast::ExpressionKind::Assignment { name, right } => {
