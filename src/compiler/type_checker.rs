@@ -377,6 +377,27 @@ mod tests {
     }
 
     #[test]
+    fn test_typechecker_var_declaration() {
+        assert_eq!(
+            tc(&eblock(vec![
+                evar("a", eint(3), Some(Type::Int)),
+                evar("b", eint(2), None),
+                eadd(eide("a"), eide("b"))
+            ]))
+            .unwrap(),
+            Type::Int
+        );
+        assert!(
+            tc(&eblock(vec![
+                evar("a", eint(3), Some(Type::Bool)),
+                eadd(eide("a"), eint(1))
+            ]))
+            .unwrap_err()
+            .contains("cannot assign Int to variable a of type Bool")
+        );
+    }
+
+    #[test]
     fn test_typechecker_while() {
         assert_eq!(
             tc(&eblock(vec![
