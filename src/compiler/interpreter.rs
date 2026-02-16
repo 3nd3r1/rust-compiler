@@ -161,17 +161,13 @@ pub mod builtins {
 
     pub fn equal(args: Vec<Value>) -> Result<Value, String> {
         match (&args[0], &args[1]) {
-            (Value::Int(left), Value::Int(right)) => Ok(Value::Bool(left == right)),
-            (Value::Bool(left), Value::Bool(right)) => Ok(Value::Bool(left == right)),
-            _ => Err(format!("expected two integers or bools")),
+            (left, right) => Ok(Value::Bool(left == right)),
         }
     }
 
     pub fn not_equal(args: Vec<Value>) -> Result<Value, String> {
         match (&args[0], &args[1]) {
-            (Value::Int(left), Value::Int(right)) => Ok(Value::Bool(left != right)),
-            (Value::Bool(left), Value::Bool(right)) => Ok(Value::Bool(left != right)),
-            _ => Err(format!("expected two integers or bools")),
+            (left, right) => Ok(Value::Bool(left != right)),
         }
     }
 
