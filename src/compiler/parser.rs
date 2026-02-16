@@ -1169,6 +1169,46 @@ pub mod tests {
         assert_eq!(
             parse(vec![
                 tkeyw("var"),
+                tide("x"),
+                tpunc(":"),
+                tide("Int"),
+                tope("="),
+                tint("1"),
+                tope("+"),
+                tint("2"),
+                tend()
+            ])
+            .unwrap(),
+            evar("x", eadd(eint(1), eint(2)), Some(types::Type::Int))
+        );
+        assert_eq!(
+            parse(vec![
+                tkeyw("var"),
+                tide("f"),
+                tpunc(":"),
+                tpunc("("),
+                tide("Int"),
+                tpunc(")"),
+                tope("="),
+                tope(">"),
+                tide("Unit"),
+                tope("="),
+                tide("print_int"),
+                tend()
+            ])
+            .unwrap(),
+            evar(
+                "f",
+                eide("print_int"),
+                Some(types::Type::Function {
+                    params: vec![types::Type::Int],
+                    return_type: Box::new(types::Type::Unit),
+                })
+            )
+        );
+        assert_eq!(
+            parse(vec![
+                tkeyw("var"),
                 tide("a"),
                 tope("="),
                 tint("1"),
@@ -1213,7 +1253,11 @@ pub mod tests {
                 tend()
             ])
             .unwrap(),
-            eblock(vec![evar("a", eblock(vec![evar("b", eint(1), None), eide("b")]), None)])
+            eblock(vec![evar(
+                "a",
+                eblock(vec![evar("b", eint(1), None), eide("b")]),
+                None
+            )])
         );
 
         // Invalid
