@@ -66,14 +66,19 @@ pub fn interpret(node: &ast::Expression, symtab: &Rc<RefCell<SymTab>>) -> Result
         ast::ExpressionKind::Identifier { value } => symtab.borrow().lookup(value),
         ast::ExpressionKind::BinaryOp { left, right, op } => {
             let left = interpret(&*left, symtab)?;
-            let right = interpret(&*right, symtab)?;
-            let identifier = op.to_string();
-
-            let func = symtab.borrow().lookup(&identifier)?;
-            if let Value::BuiltInFunction(func) = func {
-                func(vec![left, right])
-            } else {
-                Err(format!("unexpected operator {}", op))
+            match &op {
+                ast::Operation::Or if left == Value::Bool(true) => Ok(Value::Bool(true)),
+                ast::Operation::And if left == Value::Bool(false) => Ok(Value::Bool(false)),
+                _ => {
+                    let right = interpret(&*right, symtab)?;
+                    let identifier = op.to_string();
+                    let func = symtab.borrow().lookup(&identifier)?;
+                    if let Value::BuiltInFunction(func) = func {
+                        func(vec![left, right])
+                    } else {
+                        Err(format!("unexpected operator {}", op))
+                    }
+                }
             }
         }
         ast::ExpressionKind::UnaryOp { operand, op } => {
