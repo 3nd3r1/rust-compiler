@@ -140,7 +140,9 @@ pub fn interpret(node: &ast::Expression, symtab: &Rc<RefCell<SymTab>>) -> Result
             }
             Ok(Value::None)
         }
-        kind => Err(format!("unexpected expression {:?}", kind)),
+        ast::ExpressionKind::FunctionCall { .. } => {
+            todo!()
+        }
     }
 }
 
