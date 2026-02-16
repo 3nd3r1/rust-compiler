@@ -1,4 +1,4 @@
-use crate::compiler::{ast, tokenizer};
+use crate::compiler::{ast, tokenizer, type_checker::types};
 
 struct Parser {
     tokens: Vec<tokenizer::Token>,
@@ -93,6 +93,13 @@ impl Parser {
             .consume(tokenizer::TokenKind::Identifier, None)?
             .text
             .clone();
+
+        let mut value_type: Option<types::Type> = None;
+        if self.peek().text == ":" {
+            self.consume(tokenizer::TokenKind::Punctuation, Some(":"))?;
+            value_type = Some(self.parse_type()?);
+        }
+
         self.consume(tokenizer::TokenKind::Operator, Some("="))?;
         let value = self.parse_expression()?;
 
@@ -101,6 +108,7 @@ impl Parser {
             kind: ast::ExpressionKind::VarDeclaration {
                 name,
                 value: Box::new(value),
+                value_type: value_type.map(Box::new),
             },
         })
     }
@@ -411,6 +419,35 @@ impl Parser {
         }
     }
 
+    fn parse_type(&mut self) -> Result<types::Type, String> {
+        if self.peek().text == "(" {
+            self.consume(tokenizer::TokenKind::Punctuation, Some("("))?;
+            let mut param_types: Vec<types::Type> = vec![];
+            while self.peek().text != ")" {
+                let param_type = self.parse_type()?;
+                param_types.push(param_type);
+                self.consume(tokenizer::TokenKind::Punctuation, Some(","))?;
+            }
+            self.consume(tokenizer::TokenKind::Punctuation, Some(")"))?;
+            self.consume(tokenizer::TokenKind::Operator, Some("="))?;
+            self.consume(tokenizer::TokenKind::Operator, Some(">"))?;
+            let return_type = self.parse_type()?;
+
+            Ok(types::Type::Function {
+                params: param_types,
+                return_type: Box::new(return_type),
+            })
+        } else {
+            let token = self.consume(tokenizer::TokenKind::Identifier, None)?;
+            match token.text.as_str() {
+                "Int" => Ok(types::Type::Int),
+                "Bool" => Ok(types::Type::Bool),
+                "Unit" => Ok(types::Type::Unit),
+                _ => Err(format!("{:?}: expected a type", token.loc)),
+            }
+        }
+    }
+
     fn ends_with_block(&self, expression: &ast::Expression) -> bool {
         match &expression.kind {
             ast::ExpressionKind::Block { .. } => true,
@@ -599,12 +636,17 @@ pub mod tests {
         }
     }
 
-    pub fn evar(name: &str, value: ast::Expression) -> ast::Expression {
+    pub fn evar(
+        name: &str,
+        value: ast::Expression,
+        value_type: Option<types::Type>,
+    ) -> ast::Expression {
         ast::Expression {
             loc: loc(),
             kind: ast::ExpressionKind::VarDeclaration {
                 name: name.to_string(),
                 value: Box::new(value),
+                value_type: value_type.map(Box::new),
             },
         }
     }
@@ -1105,7 +1147,7 @@ pub mod tests {
     fn test_parser_var_declaration() {
         assert_eq!(
             parse(vec![tkeyw("var"), tide("a"), tope("="), tint("1"), tend()]).unwrap(),
-            evar("a", eint(1))
+            evar("a", eint(1), None)
         );
         assert_eq!(
             parse(vec![
@@ -1118,7 +1160,7 @@ pub mod tests {
                 tend()
             ])
             .unwrap(),
-            evar("x", eadd(eint(1), eint(2)))
+            evar("x", eadd(eint(1), eint(2)), None)
         );
         assert_eq!(
             parse(vec![
@@ -1134,7 +1176,7 @@ pub mod tests {
                 tend()
             ])
             .unwrap(),
-            eblock(vec![evar("a", eint(1)), evar("b", eint(2))])
+            eblock(vec![evar("a", eint(1), None), evar("b", eint(2), None)])
         );
         assert_eq!(
             parse(vec![
@@ -1147,7 +1189,7 @@ pub mod tests {
                 tend()
             ])
             .unwrap(),
-            eblock(vec![evar("a", eint(1))])
+            eblock(vec![evar("a", eint(1), None)])
         );
         assert_eq!(
             parse(vec![
@@ -1167,7 +1209,7 @@ pub mod tests {
                 tend()
             ])
             .unwrap(),
-            eblock(vec![evar("a", eblock(vec![evar("b", eint(1)), eide("b")]))])
+            eblock(vec![evar("a", eblock(vec![evar("b", eint(1), None), eide("b")]), None)])
         );
 
         // Invalid
