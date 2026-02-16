@@ -1,4 +1,5 @@
 use crate::compiler::common::Location;
+use crate::compiler::type_checker::types::Type;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Operation {
@@ -106,5 +107,6 @@ pub enum ExpressionKind {
     VarDeclaration {
         name: String,
         value: Box<Expression>,
+        value_type: Option<Box<Type>>,
     },
 }
