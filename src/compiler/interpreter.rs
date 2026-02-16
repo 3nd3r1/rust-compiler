@@ -1,4 +1,4 @@
-use std::{collections::HashMap, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::compiler::ast;
 
@@ -24,7 +24,7 @@ impl PartialEq for Value {
 #[derive(Debug, Clone, PartialEq)]
 pub struct SymTab {
     pub locals: HashMap<String, Value>,
-    pub parent: Option<Rc<SymTab>>,
+    pub parent: Option<Rc<RefCell<SymTab>>>,
 }
 
 impl SymTab {
@@ -33,7 +33,24 @@ impl SymTab {
             Ok(value.clone())
         } else {
             if let Some(parent) = &self.parent {
-                parent.lookup(identifier)
+                parent.borrow().lookup(identifier)
+            } else {
+                Err(format!("undefined identifier: {}", identifier))
+            }
+        }
+    }
+
+    fn declare(&mut self, identifier: &str, value: Value) {
+        self.locals.insert(identifier.to_string(), value);
+    }
+
+    fn assign(&mut self, identifier: &str, value: Value) -> Result<(), String> {
+        if let Some(_) = self.locals.get(identifier) {
+            self.locals.insert(identifier.to_string(), value.clone());
+            Ok(())
+        } else {
+            if let Some(parent) = &self.parent {
+                parent.borrow_mut().assign(identifier, value)
             } else {
                 Err(format!("undefined identifier: {}", identifier))
             }
@@ -41,18 +58,18 @@ impl SymTab {
     }
 }
 
-pub fn interpret(node: &ast::Expression, symtab: &mut SymTab) -> Result<Value, String> {
+pub fn interpret(node: &ast::Expression, symtab: &Rc<RefCell<SymTab>>) -> Result<Value, String> {
     match &node.kind {
         ast::ExpressionKind::NoneLiteral { .. } => Ok(Value::None),
         ast::ExpressionKind::IntLiteral { value } => Ok(Value::Int(*value)),
         ast::ExpressionKind::BoolLiteral { value } => Ok(Value::Bool(*value)),
-        ast::ExpressionKind::Identifier { value } => symtab.lookup(value),
+        ast::ExpressionKind::Identifier { value } => symtab.borrow().lookup(value),
         ast::ExpressionKind::BinaryOp { left, right, op } => {
             let left = interpret(&*left, symtab)?;
             let right = interpret(&*right, symtab)?;
             let identifier = op.to_string();
 
-            let func = symtab.lookup(&identifier)?;
+            let func = symtab.borrow().lookup(&identifier)?;
             if let Value::BuiltInFunction(func) = func {
                 func(vec![left, right])
             } else {
@@ -63,7 +80,7 @@ pub fn interpret(node: &ast::Expression, symtab: &mut SymTab) -> Result<Value, S
             let operand = interpret(&*operand, symtab)?;
             let identifier = format!("unary_{}", op);
 
-            let func = symtab.lookup(&identifier)?;
+            let func = symtab.borrow().lookup(&identifier)?;
             if let Value::BuiltInFunction(func) = func {
                 func(vec![operand])
             } else {
@@ -86,25 +103,25 @@ pub fn interpret(node: &ast::Expression, symtab: &mut SymTab) -> Result<Value, S
         }
         ast::ExpressionKind::VarDeclaration { name, value } => {
             let value = interpret(&*value, symtab)?;
-            symtab.locals.insert(name.clone(), value);
+            symtab.borrow_mut().declare(name, value);
             Ok(Value::None)
         }
         ast::ExpressionKind::Assignment { name, right } => {
             let value = interpret(&*right, symtab)?;
-            symtab.locals.insert(name.clone(), value.clone());
+            symtab.borrow_mut().assign(name, value.clone())?;
             Ok(value)
         }
         ast::ExpressionKind::Block { expressions } => {
-            let mut block_symtab = SymTab {
+            let block_symtab = Rc::new(RefCell::new(SymTab {
                 locals: HashMap::new(),
-                parent: Some(Rc::new(symtab.clone())),
-            };
+                parent: Some(Rc::clone(symtab)),
+            }));
 
             if let Some((last, expressions)) = expressions.split_last() {
                 for expression in expressions {
-                    interpret(expression, &mut block_symtab)?;
+                    interpret(expression, &block_symtab)?;
                 }
-                interpret(last, &mut block_symtab)
+                interpret(last, &block_symtab)
             } else {
                 Ok(Value::None)
             }
@@ -269,7 +286,7 @@ mod tests {
     }
 
     fn ip(node: &ast::Expression) -> Result<Value, String> {
-        interpret(node, &mut empty_symtab())
+        interpret(node, &Rc::new(RefCell::new(empty_symtab())))
     }
 
     #[test]
