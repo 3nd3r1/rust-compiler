@@ -181,11 +181,19 @@ pub fn typecheck(node: &ast::Expression, symtab: &Rc<RefCell<TypeSymTab>>) -> Re
             value,
             value_type,
         } => {
+            let actual_value_type = typecheck(&*value, symtab)?;
             if let Some(value_type) = value_type {
-                symtab.borrow_mut().declare(name, *value_type.clone());
+                if actual_value_type != **value_type {
+                    return Err(format!(
+                        "cannot assign {} to variable {} of type {}",
+                        actual_value_type, name, *value_type
+                    ));
+                }
+                symtab
+                    .borrow_mut()
+                    .declare(name, value_type.as_ref().clone());
             } else {
-                let value_type = typecheck(&*value, symtab)?;
-                symtab.borrow_mut().declare(name, value_type);
+                symtab.borrow_mut().declare(name, actual_value_type);
             }
             Ok(Type::Unit)
         }
