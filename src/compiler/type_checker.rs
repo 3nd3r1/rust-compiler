@@ -216,8 +216,39 @@ pub fn typecheck(node: &ast::Expression, symtab: &Rc<RefCell<TypeSymTab>>) -> Re
                 Ok(Type::Unit)
             }
         }
-        ast::ExpressionKind::FunctionCall { .. } => {
-            todo!()
+        ast::ExpressionKind::FunctionCall { name, arguments } => {
+            let func_type = symtab.borrow().lookup(name)?;
+
+            if let Type::Function {
+                params,
+                return_type,
+            } = func_type
+            {
+                if arguments.len() != params.len() {
+                    Err(format!(
+                        "Function {} expected {} arguments, got {}",
+                        name,
+                        params.len(),
+                        arguments.len()
+                    ))
+                } else {
+                    for i in 0..arguments.len() {
+                        let argument_type = typecheck(&arguments[i], symtab)?;
+                        if argument_type != params[i] {
+                            return Err(format!(
+                                "Function {} expected argument {} to be of type {}, got {}",
+                                name, i, params[i], argument_type
+                            ));
+                        }
+                    }
+                    Ok(*return_type)
+                }
+            } else {
+                Err(format!(
+                    "expected {} to be a Function got {}",
+                    name, func_type
+                ))
+            }
         }
     }
 }
