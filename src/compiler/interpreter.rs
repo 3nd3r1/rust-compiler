@@ -126,6 +126,20 @@ pub fn interpret(node: &ast::Expression, symtab: &Rc<RefCell<SymTab>>) -> Result
                 Ok(Value::None)
             }
         }
+        ast::ExpressionKind::While {
+            condition,
+            do_expression,
+        } => {
+            loop {
+                let value = interpret(&*condition, symtab)?;
+                if value == Value::Bool(false) {
+                    break;
+                } else {
+                    interpret(&*do_expression, symtab)?;
+                }
+            }
+            Ok(Value::None)
+        }
         kind => Err(format!("unexpected expression {:?}", kind)),
     }
 }
@@ -326,6 +340,22 @@ mod tests {
             ]))
             .unwrap(),
             Value::Int(6)
+        );
+    }
+
+    #[test]
+    fn test_interpreter_while() {
+        assert_eq!(
+            ip(&eblock(vec![
+                evar("a", eint(0)),
+                ewhile(
+                    elt(eide("a"), eint(5)),
+                    eassign("a", eadd(eide("a"), eint(1)))
+                ),
+                eide("a")
+            ]))
+            .unwrap(),
+            Value::Int(5)
         );
     }
 
