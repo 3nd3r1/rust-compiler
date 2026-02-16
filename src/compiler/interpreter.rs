@@ -27,6 +27,20 @@ pub struct SymTab {
     pub parent: Option<Rc<SymTab>>,
 }
 
+impl SymTab {
+    fn lookup(&self, identifier: &str) -> Result<Value, String> {
+        if let Some(value) = self.locals.get(identifier) {
+            Ok(value.clone())
+        } else {
+            if let Some(parent) = &self.parent {
+                parent.lookup(identifier)
+            } else {
+                Err(format!("undefined identifier: {}", identifier))
+            }
+        }
+    }
+}
+
 pub fn interpret(node: &ast::Expression, symtab: &mut SymTab) -> Result<Value, String> {
     match &node.kind {
         ast::ExpressionKind::NoneLiteral { .. } => Ok(Value::None),
@@ -35,10 +49,10 @@ pub fn interpret(node: &ast::Expression, symtab: &mut SymTab) -> Result<Value, S
         ast::ExpressionKind::BinaryOp { left, right, op } => {
             let left = interpret(&*left, symtab)?;
             let right = interpret(&*right, symtab)?;
+            let identifier = op.to_string();
 
-            let key = op.to_string();
-
-            if let Some(Value::BuiltInFunction(func)) = symtab.locals.get(&key) {
+            let func = symtab.lookup(&identifier)?;
+            if let Value::BuiltInFunction(func) = func {
                 func(vec![left, right])
             } else {
                 Err(format!("unexpected operator {}", op))
@@ -46,12 +60,13 @@ pub fn interpret(node: &ast::Expression, symtab: &mut SymTab) -> Result<Value, S
         }
         ast::ExpressionKind::UnaryOp { operand, op } => {
             let operand = interpret(&*operand, symtab)?;
-            let key = format!("unary_{}", op);
+            let identifier = format!("unary_{}", op);
 
-            if let Some(Value::BuiltInFunction(func)) = symtab.locals.get(&key) {
+            let func = symtab.lookup(&identifier)?;
+            if let Value::BuiltInFunction(func) = func {
                 func(vec![operand])
             } else {
-                Err(format!("unexpected operator {:?}", op))
+                Err(format!("unexpected operator {}", op))
             }
         }
         ast::ExpressionKind::If {
