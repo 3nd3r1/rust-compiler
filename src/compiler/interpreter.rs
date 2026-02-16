@@ -117,10 +117,103 @@ pub mod builtins {
         }
     }
 
+    pub fn substraction(args: Vec<Value>) -> Result<Value, String> {
+        match (&args[0], &args[1]) {
+            (Value::Int(left), Value::Int(right)) => Ok(Value::Int(left - right)),
+            _ => Err(format!("expected two integers")),
+        }
+    }
+
+    pub fn multiplication(args: Vec<Value>) -> Result<Value, String> {
+        match (&args[0], &args[1]) {
+            (Value::Int(left), Value::Int(right)) => Ok(Value::Int(left - right)),
+            _ => Err(format!("expected two integers")),
+        }
+    }
+
+    pub fn division(args: Vec<Value>) -> Result<Value, String> {
+        match (&args[0], &args[1]) {
+            (Value::Int(left), Value::Int(right)) => Ok(Value::Int(left / right)),
+            _ => Err(format!("expected two integers")),
+        }
+    }
+
+    pub fn modulo(args: Vec<Value>) -> Result<Value, String> {
+        match (&args[0], &args[1]) {
+            (Value::Int(left), Value::Int(right)) => Ok(Value::Int(left % right)),
+            _ => Err(format!("expected two integers")),
+        }
+    }
+
+    pub fn less_than(args: Vec<Value>) -> Result<Value, String> {
+        match (&args[0], &args[1]) {
+            (Value::Int(left), Value::Int(right)) => Ok(Value::Bool(left < right)),
+            _ => Err(format!("expected two integers")),
+        }
+    }
+
+    pub fn greater_than(args: Vec<Value>) -> Result<Value, String> {
+        match (&args[0], &args[1]) {
+            (Value::Int(left), Value::Int(right)) => Ok(Value::Bool(left > right)),
+            _ => Err(format!("expected two integers")),
+        }
+    }
+
+    pub fn equal(args: Vec<Value>) -> Result<Value, String> {
+        match (&args[0], &args[1]) {
+            (Value::Int(left), Value::Int(right)) => Ok(Value::Bool(left == right)),
+            (Value::Bool(left), Value::Bool(right)) => Ok(Value::Bool(left == right)),
+            _ => Err(format!("expected two integers or bools")),
+        }
+    }
+
+    pub fn not_equal(args: Vec<Value>) -> Result<Value, String> {
+        match (&args[0], &args[1]) {
+            (Value::Int(left), Value::Int(right)) => Ok(Value::Bool(left != right)),
+            (Value::Bool(left), Value::Bool(right)) => Ok(Value::Bool(left != right)),
+            _ => Err(format!("expected two integers or bools")),
+        }
+    }
+
+    pub fn less_than_or_equal(args: Vec<Value>) -> Result<Value, String> {
+        match (&args[0], &args[1]) {
+            (Value::Int(left), Value::Int(right)) => Ok(Value::Bool(left <= right)),
+            _ => Err(format!("expected two integers")),
+        }
+    }
+
+    pub fn greater_than_or_equal(args: Vec<Value>) -> Result<Value, String> {
+        match (&args[0], &args[1]) {
+            (Value::Int(left), Value::Int(right)) => Ok(Value::Bool(left >= right)),
+            _ => Err(format!("expected two integers")),
+        }
+    }
+
+    pub fn or(args: Vec<Value>) -> Result<Value, String> {
+        match (&args[0], &args[1]) {
+            (Value::Bool(left), Value::Bool(right)) => Ok(Value::Bool(*left || *right)),
+            _ => Err(format!("expected two bools")),
+        }
+    }
+
+    pub fn and(args: Vec<Value>) -> Result<Value, String> {
+        match (&args[0], &args[1]) {
+            (Value::Bool(left), Value::Bool(right)) => Ok(Value::Bool(*left && *right)),
+            _ => Err(format!("expected two bools")),
+        }
+    }
+
     pub fn unary_neg(args: Vec<Value>) -> Result<Value, String> {
         match &args[0] {
             Value::Int(operand) => Ok(Value::Int(-operand)),
             _ => Err(format!("expected one integer")),
+        }
+    }
+
+    pub fn unary_not(args: Vec<Value>) -> Result<Value, String> {
+        match &args[0] {
+            Value::Bool(operand) => Ok(Value::Bool(!operand)),
+            _ => Err(format!("expected one bool")),
         }
     }
 
@@ -132,7 +225,30 @@ pub mod builtins {
         let mut lib = HashMap::new();
 
         lib.insert(format!("{}", Addition), BuiltInFunction(addition));
+        lib.insert(format!("{}", Substraction), BuiltInFunction(substraction));
+        lib.insert(
+            format!("{}", Multiplication),
+            BuiltInFunction(multiplication),
+        );
+        lib.insert(format!("{}", Division), BuiltInFunction(division));
+        lib.insert(format!("{}", Modulo), BuiltInFunction(modulo));
+        lib.insert(format!("{}", LessThan), BuiltInFunction(less_than));
+        lib.insert(format!("{}", GreaterThan), BuiltInFunction(greater_than));
+        lib.insert(format!("{}", Equal), BuiltInFunction(equal));
+        lib.insert(format!("{}", NotEqual), BuiltInFunction(not_equal));
+        lib.insert(
+            format!("{}", LessThanOrEqual),
+            BuiltInFunction(less_than_or_equal),
+        );
+        lib.insert(
+            format!("{}", GreaterThanOrEqual),
+            BuiltInFunction(greater_than_or_equal),
+        );
+        lib.insert(format!("{}", Or), BuiltInFunction(or));
+        lib.insert(format!("{}", And), BuiltInFunction(and));
+
         lib.insert(format!("unary_{}", Neg), BuiltInFunction(unary_neg));
+        lib.insert(format!("unary_{}", Not), BuiltInFunction(unary_not));
 
         lib
     }
