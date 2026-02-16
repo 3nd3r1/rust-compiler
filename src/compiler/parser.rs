@@ -80,6 +80,7 @@ impl Parser {
             return Ok(ast::Expression {
                 loc,
                 kind: ast::ExpressionKind::Block { expressions },
+                return_type: None,
             });
         }
     }
@@ -110,6 +111,7 @@ impl Parser {
                 value: Box::new(value),
                 value_type: value_type.map(Box::new),
             },
+            return_type: None,
         })
     }
 
@@ -135,6 +137,7 @@ impl Parser {
                         name,
                         right: Box::new(right),
                     },
+                    return_type: None,
                 })
             } else {
                 Err(format!(
@@ -170,6 +173,7 @@ impl Parser {
                     right: Box::new(right),
                     op: operation,
                 },
+                return_type: None,
             }
         }
 
@@ -188,6 +192,7 @@ impl Parser {
                     operand: Box::new(operand),
                     op: operation,
                 },
+                return_type: None,
             });
         }
         self.parse_primary()
@@ -231,6 +236,7 @@ impl Parser {
                     .parse::<i32>()
                     .map_err(|_| format!("{:?}: invalid number", token.loc))?,
             },
+            return_type: None,
         })
     }
 
@@ -247,6 +253,7 @@ impl Parser {
         Ok(ast::Expression {
             loc,
             kind: ast::ExpressionKind::Identifier { value: name },
+            return_type: None,
         })
     }
 
@@ -261,6 +268,7 @@ impl Parser {
                     .parse::<bool>()
                     .map_err(|_| format!("{:?}: invalid boolean", token.loc))?,
             },
+            return_type: None,
         })
     }
 
@@ -298,6 +306,7 @@ impl Parser {
                 then_expression: Box::new(then_expression),
                 else_expression: else_expression.map(Box::new),
             },
+            return_type: None,
         })
     }
 
@@ -329,6 +338,7 @@ impl Parser {
                     expressions.push(ast::Expression {
                         loc: none_loc,
                         kind: ast::ExpressionKind::NoneLiteral,
+                        return_type: None,
                     });
                     break;
                 }
@@ -339,6 +349,7 @@ impl Parser {
         Ok(ast::Expression {
             loc,
             kind: ast::ExpressionKind::Block { expressions },
+            return_type: None,
         })
     }
 
@@ -357,6 +368,7 @@ impl Parser {
                 condition: Box::new(condition),
                 do_expression: Box::new(do_expression),
             },
+            return_type: None,
         })
     }
 
@@ -382,6 +394,7 @@ impl Parser {
         Ok(ast::Expression {
             loc,
             kind: ast::ExpressionKind::FunctionCall { name, arguments },
+            return_type: None,
         })
     }
 
@@ -505,6 +518,7 @@ pub mod tests {
         ast::Expression {
             loc: loc(),
             kind: ast::ExpressionKind::IntLiteral { value },
+            return_type: None,
         }
     }
 
@@ -512,6 +526,7 @@ pub mod tests {
         ast::Expression {
             loc: loc(),
             kind: ast::ExpressionKind::BoolLiteral { value },
+            return_type: None,
         }
     }
 
@@ -521,6 +536,7 @@ pub mod tests {
             kind: ast::ExpressionKind::Identifier {
                 value: value.to_string(),
             },
+            return_type: None,
         }
     }
 
@@ -528,6 +544,7 @@ pub mod tests {
         ast::Expression {
             loc: loc(),
             kind: ast::ExpressionKind::NoneLiteral,
+            return_type: None,
         }
     }
 
@@ -567,6 +584,7 @@ pub mod tests {
                 right: Box::new(right),
                 op,
             },
+            return_type: None,
         }
     }
 
@@ -582,6 +600,7 @@ pub mod tests {
                 then_expression: Box::new(then_expression),
                 else_expression: else_expression.map(Box::new),
             },
+            return_type: None,
         }
     }
 
@@ -592,6 +611,7 @@ pub mod tests {
                 name: name.to_string(),
                 arguments,
             },
+            return_type: None,
         }
     }
 
@@ -602,6 +622,7 @@ pub mod tests {
                 name: name.to_string(),
                 right: Box::new(right),
             },
+            return_type: None,
         }
     }
 
@@ -620,6 +641,7 @@ pub mod tests {
                 operand: Box::new(operand),
                 op,
             },
+            return_type: None,
         }
     }
 
@@ -627,6 +649,7 @@ pub mod tests {
         ast::Expression {
             loc: loc(),
             kind: ast::ExpressionKind::Block { expressions },
+            return_type: None,
         }
     }
 
@@ -637,6 +660,7 @@ pub mod tests {
                 condition: Box::new(condition),
                 do_expression: Box::new(do_expression),
             },
+            return_type: None,
         }
     }
 
@@ -652,6 +676,7 @@ pub mod tests {
                 value: Box::new(value),
                 value_type: value_type.map(Box::new),
             },
+            return_type: None,
         }
     }
 
