@@ -191,6 +191,56 @@ pub fn typecheck(node: &ast::Expression, symtab: &Rc<RefCell<TypeSymTab>>) -> Re
     }
 }
 
+pub mod builtin_types {
+    use super::*;
+
+    pub fn build_builtin_types() -> HashMap<String, Type> {
+        use ast::Operation::*;
+        use ast::UnaryOperation::*;
+
+        let mut types = HashMap::new();
+
+        let int_int_to_int = Type::Function {
+            params: vec![Type::Int, Type::Int],
+            return_type: Box::new(Type::Int),
+        };
+        let int_int_to_bool = Type::Function {
+            params: vec![Type::Int, Type::Int],
+            return_type: Box::new(Type::Bool),
+        };
+        let bool_bool_to_bool = Type::Function {
+            params: vec![Type::Bool, Type::Bool],
+            return_type: Box::new(Type::Bool),
+        };
+
+        let int_to_int = Type::Function {
+            params: vec![Type::Int],
+            return_type: Box::new(Type::Int),
+        };
+        let bool_to_bool = Type::Function {
+            params: vec![Type::Bool],
+            return_type: Box::new(Type::Bool),
+        };
+
+        types.insert(format!("{}", Addition), int_int_to_int.clone());
+        types.insert(format!("{}", Substraction), int_int_to_int.clone());
+        types.insert(format!("{}", Multiplication), int_int_to_int.clone());
+        types.insert(format!("{}", Division), int_int_to_int.clone());
+        types.insert(format!("{}", Modulo), int_int_to_int.clone());
+        types.insert(format!("{}", LessThan), int_int_to_bool.clone());
+        types.insert(format!("{}", GreaterThan), int_int_to_bool.clone());
+        types.insert(format!("{}", LessThanOrEqual), int_int_to_bool.clone());
+        types.insert(format!("{}", GreaterThanOrEqual), int_int_to_bool.clone());
+        types.insert(format!("{}", Or), bool_bool_to_bool.clone());
+        types.insert(format!("{}", And), bool_bool_to_bool.clone());
+
+        types.insert(format!("unary_{}", Neg), int_to_int.clone());
+        types.insert(format!("unary_{}", Not), bool_to_bool.clone());
+
+        types
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -198,7 +248,7 @@ mod tests {
 
     fn empty_symtab() -> TypeSymTab {
         TypeSymTab {
-            locals: HashMap::new(),
+            locals: builtin_types::build_builtin_types(),
             parent: None,
         }
     }
