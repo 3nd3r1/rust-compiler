@@ -271,13 +271,19 @@ mod tests {
     }
 
     #[test]
-    fn test_interpreter_addition() {
+    fn test_interpreter_binary() {
         assert_eq!(ip(&eadd(eint(2), eint(3))).unwrap(), Value::Int(5));
+        assert_eq!(ip(&esub(eint(2), eint(3))).unwrap(), Value::Int(-1));
+        assert_eq!(
+            ip(&eadd(eint(2), emul(eint(2), eint(3)))).unwrap(),
+            Value::Int(8)
+        );
     }
 
     #[test]
     fn test_interpreter_unary() {
         assert_eq!(ip(&eneg(eint(2))).unwrap(), Value::Int(-2));
         assert_eq!(ip(&eneg(eneg(eint(2)))).unwrap(), Value::Int(2));
+        assert_eq!(ip(&enot(ebool(true))).unwrap(), Value::Bool(false));
     }
 }
