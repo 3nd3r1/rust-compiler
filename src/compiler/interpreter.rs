@@ -150,11 +150,17 @@ mod tests {
         }
     }
 
+    fn ip(node: &ast::Expression) -> Result<Value, String> {
+        interpret(node, &mut empty_symtab())
+    }
+
     #[test]
-    fn test_interpreter_basics() {
-        assert_eq!(
-            interpret(&eadd(eint(2), eint(3)), &mut empty_symtab()).unwrap(),
-            Value::Int(5)
-        );
+    fn test_interpreter_addition() {
+        assert_eq!(ip(&eadd(eint(2), eint(3))).unwrap(), Value::Int(5));
+    }
+
+    #[test]
+    fn test_interpreter_unary() {
+        assert_eq!(ip(&eneg(eint(2))).unwrap(), Value::Int(-2));
     }
 }
