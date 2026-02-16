@@ -93,7 +93,7 @@ pub enum ExpressionKind {
         arguments: Vec<Expression>,
     },
     Assignment {
-        left: Box<Expression>,
+        name: String,
         right: Box<Expression>,
     },
     Block {
